@@ -1,0 +1,127 @@
+[project]
+name = "atlasrag"
+version = "0.1.0"
+description = "Enterprise Knowledge Copilot — advanced RAG with an explicit answer contract, document-level ACL, and per-language evaluation."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { file = "LICENSE" }
+
+dependencies = [
+    # api
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "sse-starlette>=2.1",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    # persistence
+    "sqlalchemy[asyncio]>=2.0",
+    "asyncpg>=0.30",
+    "alembic>=1.14",
+    "pgvector>=0.3",
+    # cache & queue
+    "redis>=5.2",
+    "arq>=0.26",
+    # models
+    "litellm>=1.55",
+    "openai>=1.57",
+    "cohere>=5.13",
+    # agentic layer
+    "langgraph>=1.0",
+    # ingestion
+    "docling>=2.14",
+    # security
+    "pyjwt>=2.10",
+    "argon2-cffi>=23.1",
+    # observability
+    "langfuse>=2.55",
+    "structlog>=24.4",
+]
+
+[project.optional-dependencies]
+evals = [
+    "ragas>=0.2",
+    "datasets>=3.2",
+    "pandas>=2.2",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.8",
+    "mypy>=1.13",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=6.0",
+    "httpx>=0.28",
+    "testcontainers[postgres,redis]>=4.9",
+    "import-linter>=2.1",
+    "pre-commit>=4.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/atlasrag"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "apps", "evals", "scripts", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "SIM", "TID", "RUF", "ASYNC", "S"]
+ignore = ["S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "N"]
+"evals/**" = ["S"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+plugins = ["pydantic.mypy"]
+mypy_path = "src"
+
+[[tool.mypy.overrides]]
+module = ["docling.*", "litellm.*", "langfuse.*", "ragas.*", "pgvector.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-q --strict-markers"
+markers = [
+    "unit: no external services required",
+    "integration: requires Postgres/Redis (testcontainers)",
+    "e2e: full stack via docker compose",
+    "architecture: module boundary and dependency-direction rules",
+]
+
+# Module boundaries for the modular monolith: modules may depend on contracts and
+# platform, never on each other. Enforced by `lint-imports` in tests/architecture.
+[tool.importlinter]
+root_package = "atlasrag"
+
+[[tool.importlinter.contracts]]
+name = "Modules are independent of each other"
+type = "independence"
+modules = [
+    "atlasrag.modules.identity",
+    "atlasrag.modules.documents",
+    "atlasrag.modules.ingestion",
+    "atlasrag.modules.retrieval",
+    "atlasrag.modules.answering",
+    "atlasrag.modules.conversations",
+    "atlasrag.modules.feedback",
+]
+
+[[tool.importlinter.contracts]]
+name = "Layers point inward"
+type = "layers"
+layers = [
+    "atlasrag.modules",
+    "atlasrag.platform",
+    "atlasrag.contracts",
+]

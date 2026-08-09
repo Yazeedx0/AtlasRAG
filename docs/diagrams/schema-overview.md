@@ -1,7 +1,7 @@
 # AtlasRAG Data Model — Conceptual Overview
 
 Simplified, conceptual views of the schema. For the full entity-relationship
-diagram with columns and types, see [AtlasRAG-schema.png](AtlasRAG-schema.png).
+diagram with columns and types, see [schema-erd.png](schema-erd.png).
 
 ## Layers
 
@@ -76,4 +76,17 @@ flowchart LR
     RolePrincipal --> document_acl
     GroupPrincipal --> document_acl
     document_acl --> document["document"]
+```
+```bash 
+                        principals
+                    /       |       \
+                   /        |        \
+                users     roles     groups
+                  │          ▲          ▲
+                  │          │          │
+                  └──── user_roles      │
+                                        │
+                                group_memberships
+                                 ▲             │
+                                 └──── group ──┘
 ```

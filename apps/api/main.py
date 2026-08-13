@@ -5,7 +5,8 @@ from fastapi import FastAPI
 
 from apps.api.router import api_router
 from apps.api.routes import health
-from apps.core.config import get_settings
+from src import get_settings
+
 settings = get_settings()
 
 

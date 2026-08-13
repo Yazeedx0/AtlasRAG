@@ -1,0 +1,1 @@
+from atlasrag import get_settings

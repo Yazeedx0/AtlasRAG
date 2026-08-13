@@ -8,8 +8,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine
 )
 
-from apps.core.config import get_settings
-
+from src import get_settings
 
 settings = get_settings()
 

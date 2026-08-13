@@ -1,0 +1,1 @@
+from .bootstrap import get_settings

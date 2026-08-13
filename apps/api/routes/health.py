@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Response, status
 
 from apps.api.schemas import LivenessResponse, ReadinessResponse
-from apps.core.config import get_settings
+from src import get_settings
+
 
 settings = get_settings()
 

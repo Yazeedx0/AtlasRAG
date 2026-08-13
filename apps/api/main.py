@@ -1,9 +1,11 @@
-from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
-from src.atlasrag.bootstrap.config import get_settings
-from fastapi import FastAPI
-from fastapi import status
+from contextlib import asynccontextmanager
 
+from fastapi import FastAPI
+from src.atlasrag.bootstrap.config import get_settings
+
+from apps.api.router import api_router
+from apps.api.routes import health
 
 settings = get_settings()
 
@@ -18,13 +20,12 @@ def create_app() -> FastAPI:
         title=settings.APP_NAME,
         version=settings.APP_VERSION,
         lifespan=lifespan,
-      
     )
 
-
-    @application.get("/health", tags=["health"], status_code=status.HTTP_200_OK)
-    async def health_check() -> dict[str, str]:
-        return {"status": "ok"}
+    # Probes stay unversioned so orchestrators and load balancers can point at a
+    # stable /health across API versions.
+    application.include_router(health.router)
+    application.include_router(api_router)
 
     return application
 

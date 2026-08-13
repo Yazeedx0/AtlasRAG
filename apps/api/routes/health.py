@@ -1,14 +1,7 @@
-"""Liveness and readiness probes.
-
-These are infrastructure endpoints rather than API surface, so they are mounted at
-the application root (outside ``/api/v1``): orchestrator probes should not have to
-follow an API version bump.
-"""
-
 from fastapi import APIRouter, Response, status
-from src.atlasrag.bootstrap import get_settings
 
-from apps.api.schemas.health import LivenessResponse, ReadinessResponse
+from apps.api.schemas import LivenessResponse, ReadinessResponse
+from apps.core.config import get_settings
 
 settings = get_settings()
 
@@ -27,12 +20,7 @@ async def liveness() -> LivenessResponse:
 
 @router.get("/ready", summary="Readiness probe")
 async def readiness(response: Response) -> ReadinessResponse:
-    """Report whether the dependencies needed to serve traffic are reachable.
-
-    Postgres, Redis and the vector store get registered here as they are wired into
-    the lifespan; each check reports ``"ok"`` or a short failure reason. Returns 503
-    when any check fails so a load balancer drops the instance without killing it.
-    """
+   
     checks: dict[str, str] = {}
 
     if any(result != "ok" for result in checks.values()):

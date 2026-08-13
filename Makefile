@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-COMPOSE := docker compose -f infra/compose/docker-compose.yml
+COMPOSE := docker compose -f infra/docker-compose.yml
 
 .PHONY: help
 help: ## Show this help
@@ -9,13 +9,17 @@ help: ## Show this help
 install: ## Sync dependencies with uv
 	uv sync --all-extras --dev
 
-.PHONY: dev
-dev: ## Bring up Postgres+pgvector, Redis, Langfuse and the API
+.PHONY: dev docker-up
+dev docker-up: ## Bring up Postgres+pgvector, Redis, Langfuse and the API
 	$(COMPOSE) up -d
 
-.PHONY: down
-down: ## Stop the dev stack
+.PHONY: docker-down
+docker-down: ## Stop the dev stack
 	$(COMPOSE) down
+
+.PHONY: docker-down-v
+docker-down-v: ## Stop the dev stack and delete volumes (destroys data)
+	$(COMPOSE) down -v
 
 .PHONY: logs
 logs: ## Tail the dev stack logs

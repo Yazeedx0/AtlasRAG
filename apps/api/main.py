@@ -2,11 +2,10 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from src.atlasrag.bootstrap.config import get_settings
 
 from apps.api.router import api_router
 from apps.api.routes import health
-
+from apps.core.config import get_settings
 settings = get_settings()
 
 

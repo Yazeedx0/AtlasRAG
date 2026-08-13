@@ -1,0 +1,33 @@
+name: atlasrag
+
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.6-pg17-trixie
+
+    environment:
+      POSTGRES_DB: ${ATLAS_POSTGRES_DB:-atlasrag}
+      POSTGRES_USER: ${ATLAS_POSTGRES_USER:-atlas}
+      POSTGRES_PASSWORD: ${ATLAS_POSTGRES_PASSWORD:-atlas_dev_password}
+
+    ports:
+      - "${ATLAS_POSTGRES_PORT:-5432}:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

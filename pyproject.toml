@@ -82,7 +82,6 @@ python_version = "3.12"
 strict = true
 warn_unreachable = true
 plugins = ["pydantic.mypy"]
-mypy_path = "src"
 
 [[tool.mypy.overrides]]
 module = ["docling.*", "litellm.*", "langfuse.*", "ragas.*", "pgvector.*"]

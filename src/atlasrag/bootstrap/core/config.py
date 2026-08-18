@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     ENVIROMENT: Environment = Environment.DEVELOPMENT
 
     DATABASE_URL: PostgresDsn
+    DATABASE_ECHO: bool = False
     DEBUG : bool = False
     model_config = SettingsConfigDict(
         env_prefix="ATLAS_",

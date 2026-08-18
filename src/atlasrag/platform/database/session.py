@@ -1,25 +1,11 @@
 from collections.abc import AsyncIterator
-from webbrowser import get
 
-from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-    async_session,
-    async_sessionmaker,
-    create_async_engine
-)
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from src import get_settings
-
-settings = get_settings()
-
-engine = create_async_engine(
-    str(settings.DATABASE_URL),
-    pool_pre_ping=True,
-)
-
+from .engine import get_engine
 
 async_session_factory = async_sessionmaker(
-    bind=engine,
+    bind=get_engine(),
     class_=AsyncSession,
     expire_on_commit=False,
 )

@@ -16,37 +16,34 @@ class Users(Base):
     __tablename__ = "users"
     __table_args__ = {"schema": "iam"}
 
-    principal_id = Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), 
+    principal_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         ForeignKey(
-            "principle.id.iam",
-            "CASECADE"
+            "iam.principals.id",
+            ondelete="CASCADE",
         ),
-        primary_key=True
+        primary_key=True,
     )
 
-    display_name = Mapped[str] = mapped_column(
-
-        String(255), 
-        nullable=False 
-
+    display_name: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
     )
 
-    password_hash = Mapped[str] = mapped_column(
+    password_hash: Mapped[str | None] = mapped_column(
         Text,
-        nullable=True
+        nullable=True,
     )
 
-    created_at = Mapped[datetime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        nullable=False, 
+        nullable=False,
         server_default=func.now(),
     )
 
-    updated_at = Mapped[datetime] = mapped_column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        nullable=False, 
+        nullable=False,
         server_default=func.now(),
-        onupdate=func.now()
+        onupdate=func.now(),
     )
-

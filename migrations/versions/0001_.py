@@ -1,6 +1,6 @@
 """empty message
 
-Revision ID: c525fcb7c817
+Revision ID: 0001
 Revises:
 Create Date: 2026-08-19 00:27:34.244990
 
@@ -8,7 +8,7 @@ Create Date: 2026-08-19 00:27:34.244990
 
 from collections.abc import Sequence
 
-revision: str = "c525fcb7c817"
+revision: str = "0001"
 down_revision: str | None = None
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

@@ -1,7 +1,7 @@
 """add identity tables
 
-Revision ID: 22b0753d075d
-Revises: c525fcb7c817
+Revision ID: 0002
+Revises: 0001
 Create Date: 2026-08-20 13:28:01.418805
 
 """
@@ -11,8 +11,8 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "22b0753d075d"
-down_revision: str | None = "c525fcb7c817"
+revision: str = "0002"
+down_revision: str | None = "0001"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

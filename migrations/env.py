@@ -7,8 +7,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from atlasrag import get_settings
 from atlasrag.platform.database import Base
-from atlasrag.modules.identity.models import iam as _identity_iam
-from atlasrag.modules.identity.models import user as user_iam
+from atlasrag.modules.identity import models as _identity_models
 
 config = context.config
 
@@ -36,7 +35,11 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        include_schemas=True,
+    )
 
     with context.begin_transaction():
         context.run_migrations()

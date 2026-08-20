@@ -1,17 +1,17 @@
 import uuid
 from datetime import datetime
 from atlasrag.platform.database import Base
-from atlasrag.modules.identity.enums import PrincipalType
+from atlasrag.modules.identity.enums import PRINCIPAL_TYPE_DB_ENUM, PrincipalType
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
-    Enum,
     UniqueConstraint,
     func,
     true,
 )
+
 
 class Principal(Base):
     __tablename__ = "principals"
@@ -39,12 +39,7 @@ class Principal(Base):
     )
 
     type: Mapped[PrincipalType] = mapped_column(
-        Enum(
-            PrincipalType,
-            name="principal_type",
-            schema="iam",
-            values_callable=lambda enum: [member.value for member in enum],
-        ),
+        PRINCIPAL_TYPE_DB_ENUM,
         nullable=False,
     )
 

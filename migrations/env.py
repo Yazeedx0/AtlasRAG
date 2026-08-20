@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from atlasrag import get_settings
 from atlasrag.platform.database import Base
+from atlasrag.modules.identity.models import iam as _identity_iam
 
 config = context.config
 

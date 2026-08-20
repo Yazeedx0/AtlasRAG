@@ -1,6 +1,5 @@
-import uuid
+import uuid 
 from datetime import datetime
-
 from sqlalchemy import DateTime, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -8,44 +7,48 @@ from sqlalchemy.orm import Mapped, mapped_column
 from atlasrag.platform.database import Base
 
 
-class Role(Base):
-    __tablename__ = "roles"
+class Group(Base):
+
+    __tablename__ = "groups"
     __table_args__ = {"schema": "iam"}
 
-    principal_id: Mapped[uuid.UUID] = mapped_column(
+    principal_id : Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
+
         ForeignKey(
             "iam.principals.id",
-            ondelete="CASCADE",
+            ondelete="CASECADE"
         ),
-        primary_key=True,
-    )
+        primary_key=True
+        )
 
-    role_key: Mapped[str] = mapped_column(
-        String(100),
+    group_key: Mapped[str] = mapped_column(
+        String(255),
         nullable=False,
-        unique=True,
+        unique=True
     )
 
     name: Mapped[str] = mapped_column(
         String(255),
-        nullable=False,
+        nullable=False
     )
 
-    description: Mapped[str | None] = mapped_column(
+    discription: Mapped[str | None] = mapped_column(
         Text,
-        nullable=True,
+        nullable=True 
     )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        server_default=func.now(),
+        server_default=func.now()
     )
 
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
-        onupdate=func.now(),
+        onupdate=func.now()
     )
+
+

@@ -1,7 +1,10 @@
 import asyncio
+import re
 from logging.config import fileConfig
+from pathlib import Path
 
 from alembic import context
+from alembic.operations.ops import MigrationScript
 from sqlalchemy import Connection, pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
@@ -17,6 +20,28 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
+REVISION_RE = re.compile(r"^(\d{4})\.py$")
+
+
+def _next_revision_id() -> str:
+    script_location = config.get_main_option("script_location")
+    assert script_location is not None
+    versions_dir = Path(script_location) / "versions"
+    existing = [
+        int(match.group(1))
+        for f in versions_dir.glob("*.py")
+        if (match := REVISION_RE.match(f.name))
+    ]
+    return f"{(max(existing, default=0) + 1):04d}"
+
+
+def process_revision_directives(context, revision, directives: list[MigrationScript]) -> None:
+    script = directives[0]
+    next_id = _next_revision_id()
+    script.rev_id = next_id
+    if script.version_path is not None:
+        script.version_path = str(Path(script.version_path).with_name(f"{next_id}.py"))
+
 
 def get_database_url() -> str:
     return str(get_settings().DATABASE_URL)
@@ -28,6 +53,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        process_revision_directives=process_revision_directives,
     )
 
     with context.begin_transaction():
@@ -39,6 +65,7 @@ def do_run_migrations(connection: Connection) -> None:
         connection=connection,
         target_metadata=target_metadata,
         include_schemas=True,
+        process_revision_directives=process_revision_directives,
     )
 
     with context.begin_transaction():

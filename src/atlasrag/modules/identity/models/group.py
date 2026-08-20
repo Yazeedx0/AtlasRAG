@@ -12,30 +12,29 @@ class Group(Base):
     __tablename__ = "groups"
     __table_args__ = {"schema": "iam"}
 
-    principal_id : Mapped[uuid.UUID] = mapped_column(
+    principal_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-
         ForeignKey(
             "iam.principals.id",
-            ondelete="CASECADE"
+            ondelete="CASCADE",
         ),
-        primary_key=True
-        )
+        primary_key=True,
+    )
 
     group_key: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
-        unique=True
+        unique=True,
     )
 
     name: Mapped[str] = mapped_column(
         String(255),
-        nullable=False
+        nullable=False,
     )
 
-    discription: Mapped[str | None] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         Text,
-        nullable=True 
+        nullable=True,
     )
 
     created_at: Mapped[datetime] = mapped_column(

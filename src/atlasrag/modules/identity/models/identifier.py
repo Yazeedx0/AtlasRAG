@@ -73,7 +73,7 @@ class UserIdentifier(Base):
         String(500),
         nullable=False,
         default="local",
-        server_default=text("local"),
+        server_default=text("'local'"),
     )
 
     verified_at: Mapped[datetime | None] = mapped_column(
@@ -84,6 +84,7 @@ class UserIdentifier(Base):
     valid_from: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
+        server_default=func.now(),
     )
 
     valid_to: Mapped[datetime | None] = mapped_column(

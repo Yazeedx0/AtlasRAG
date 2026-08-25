@@ -3,10 +3,13 @@ from types import TracebackType
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from atlasrag.contracts.identity import IdentityRepository
 from atlasrag.platform.database.identity.repository import SqlAlchemyIdentityRepository
 
 
 class SqlAlchemyIdentityUnitOfWork:
+    identities: IdentityRepository
+
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._session_factory = session_factory
         self._session: AsyncSession | None = None
@@ -27,7 +30,7 @@ class SqlAlchemyIdentityUnitOfWork:
         assert self._session is not None
 
         try:
-            if not self._committed:
+            if exc_type is not None or not self._committed:
                 await self._session.rollback()
         finally:
             await self._session.close()

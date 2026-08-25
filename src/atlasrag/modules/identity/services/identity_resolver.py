@@ -48,23 +48,31 @@ class IdentityResolver:
         return await self._provision(identity)
 
     async def _provision(self, identity: AuthenticatedIdentity) -> UUID:
-        async with self._uow_factory() as uow:
-            local_identity = await uow.identities.find_by_oidc_subject(
-                issuer=identity.issuer,
-                subject=identity.subject,
-            )
+        provisioning_collision = False
 
-            if local_identity is not None:
-                self._ensure_usable(local_identity)
-                return local_identity.principal_id
+        try:
+            async with self._uow_factory() as uow:
+                local_identity = await uow.identities.find_by_oidc_subject(
+                    issuer=identity.issuer,
+                    subject=identity.subject,
+                )
 
-            try:
-                principal_id = await uow.identities.provision_user(identity)
-            except IdentityAlreadyProvisioned:
-                return await self._resolve_after_conflict(identity)
+                if local_identity is not None:
+                    self._ensure_usable(local_identity)
+                    return local_identity.principal_id
 
-            await uow.commit()
-            return principal_id
+                try:
+                    principal_id = await uow.identities.provision_user(identity)
+                except IdentityAlreadyProvisioned:
+                    provisioning_collision = True
+                    raise
+
+                await uow.commit()
+                return principal_id
+        except IdentityAlreadyProvisioned:
+            if not provisioning_collision:
+                raise
+            return await self._resolve_after_conflict(identity)
 
     async def _resolve_after_conflict(self, identity: AuthenticatedIdentity) -> UUID:
         async with self._uow_factory() as uow:

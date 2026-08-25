@@ -7,7 +7,6 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     String,
-    Text,
     func,
 )
 
@@ -28,11 +27,6 @@ class Users(Base):
     display_name: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
-    )
-
-    password_hash: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True,
     )
 
     created_at: Mapped[datetime] = mapped_column(

@@ -1,9 +1,17 @@
+from collections.abc import Callable
 from uuid import UUID
 
 from atlasrag.contracts.authentication import AuthenticatedIdentity
-from atlasrag.contracts.identity import IdentityRepository, LocalUserIdentity
+from atlasrag.contracts.identity import (
+    IdentityRepository,
+    IdentityUnitOfWork,
+    LocalUserIdentity,
+    ProvisioningPolicy,
+)
 
 from atlasrag.modules.identity.helpers.errors import (
+    IdentityAlreadyProvisioned,
+    IdentityProvisioningConflict,
     LocalIdentityDisabled,
     LocalIdentityNotProvisioned,
     LocalIdentityRetired,
@@ -11,8 +19,15 @@ from atlasrag.modules.identity.helpers.errors import (
 
 
 class IdentityResolver:
-    def __init__(self, repository: IdentityRepository) -> None:
+    def __init__(
+        self,
+        repository: IdentityRepository,
+        uow_factory: Callable[[], IdentityUnitOfWork],
+        policy: ProvisioningPolicy,
+    ) -> None:
         self._repository = repository
+        self._uow_factory = uow_factory
+        self._policy = policy
 
     async def resolve(
         self,
@@ -23,11 +38,45 @@ class IdentityResolver:
             subject=identity.subject,
         )
 
-        if local_identity is None:
+        if local_identity is not None:
+            self._ensure_usable(local_identity)
+            return local_identity.principal_id
+
+        if not self._policy.jit_enabled():
             raise LocalIdentityNotProvisioned
 
-        self._ensure_usable(local_identity)
+        return await self._provision(identity)
 
+    async def _provision(self, identity: AuthenticatedIdentity) -> UUID:
+        async with self._uow_factory() as uow:
+            local_identity = await uow.identities.find_by_oidc_subject(
+                issuer=identity.issuer,
+                subject=identity.subject,
+            )
+
+            if local_identity is not None:
+                self._ensure_usable(local_identity)
+                return local_identity.principal_id
+
+            try:
+                principal_id = await uow.identities.provision_user(identity)
+            except IdentityAlreadyProvisioned:
+                return await self._resolve_after_conflict(identity)
+
+            await uow.commit()
+            return principal_id
+
+    async def _resolve_after_conflict(self, identity: AuthenticatedIdentity) -> UUID:
+        async with self._uow_factory() as uow:
+            local_identity = await uow.identities.find_by_oidc_subject(
+                issuer=identity.issuer,
+                subject=identity.subject,
+            )
+
+        if local_identity is None:
+            raise IdentityProvisioningConflict
+
+        self._ensure_usable(local_identity)
         return local_identity.principal_id
 
     @staticmethod

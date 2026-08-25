@@ -23,3 +23,24 @@ LDAP / AD        ───►│ Federation         │
                      │ Authorization      │
                      └────────────────────┘
 ```
+
+```bash 
+Raw Bearer Token
+      │
+      ▼
+TokenVerifier
+      │
+      │ verified
+      ▼
+AuthenticatedIdentity
+      │
+      ▼
+IdentityResolver     
+      │
+      ▼
+iam.user_identifiers
+      │
+      ▼
+User / Principal
+
+```

@@ -1,9 +1,6 @@
-from atlasrag.platform.database.models import UserIdentifier
+from atlasrag.platform.database.models import Role, UserIdentifier, UserRole, Users
 
 from .iam import Principal
-from .roles import Role
-from .user import Users
-from .user_roles import UserRole
 from .group import Group
 
 __all__ = [

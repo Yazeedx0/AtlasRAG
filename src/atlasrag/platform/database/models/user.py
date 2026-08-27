@@ -1,15 +1,15 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from atlasrag.platform.database import Base
+from atlasrag.platform.database.base import Base
 
 
-class Role(Base):
-    __tablename__ = "roles"
+class Users(Base):
+    __tablename__ = "users"
     __table_args__ = {"schema": "iam"}
 
     principal_id: Mapped[uuid.UUID] = mapped_column(
@@ -21,20 +21,9 @@ class Role(Base):
         primary_key=True,
     )
 
-    role_key: Mapped[str] = mapped_column(
-        String(100),
-        nullable=False,
-        unique=True,
-    )
-
-    name: Mapped[str] = mapped_column(
+    display_name: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
-    )
-
-    description: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True,
     )
 
     created_at: Mapped[datetime] = mapped_column(

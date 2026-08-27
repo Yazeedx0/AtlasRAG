@@ -68,6 +68,42 @@ class UserIdentifierRepository(Protocol):
         ...
 
 
+class RoleAssignmentRepository(Protocol):
+    async def user_exists(self, user_principal_id: UUID) -> bool:
+        ...
+
+    async def role_exists(self, role_principal_id: UUID) -> bool:
+        ...
+
+    async def has_active_assignment(
+        self,
+        *,
+        user_principal_id: UUID,
+        role_principal_id: UUID,
+    ) -> bool:
+        ...
+
+    async def add_assignment(
+        self,
+        *,
+        user_principal_id: UUID,
+        role_principal_id: UUID,
+        assigned_by_principal_id: UUID,
+        assigned_at: datetime,
+    ) -> None:
+        ...
+
+    async def close_active_assignment(
+        self,
+        *,
+        user_principal_id: UUID,
+        role_principal_id: UUID,
+        revoked_by_principal_id: UUID,
+        revoked_at: datetime,
+    ) -> bool:
+        ...
+
+
 class IdentityUnitOfWork(Protocol):
     identities: IdentityRepository
     principals: PrincipalRepository

@@ -5,13 +5,14 @@ This directory contains the local development realm configuration for AtlasRAG.
 ## Configuration
 
 - Realm: `atlas`
-- Client: `atlasrag-api`
-- Client type: bearer-only API client
+- API client: `atlasrag-api` (bearer-only)
+- Web client: `atlasrag-web` (public OIDC client)
+- Web redirect URI: `http://localhost:3000/*`
 - Keycloak URL: <http://localhost:8080>
 - Realm issuer: <http://localhost:8080/realms/atlas>
 - Database: `keycloak` with the dedicated `keycloak` database user
 
-The client configuration is embedded in [`realm-export.json`](./realm-export.json). Keycloak
+The client configuration is embedded in [`atlasrag-realm.json`](./atlasrag-realm.json). Keycloak
 imports this file automatically when the Compose service starts with `--import-realm`.
 
 ## Admin console
@@ -75,3 +76,21 @@ CurrentIdentity = Annotated[
 The dependency authenticates the external identity only. Use `IdentityResolver` in the
 application/service layer to resolve `(issuer, subject)` to an AtlasRAG Principal and to
 enforce local disabled or retired identity rules.
+
+The first protected integration endpoint is:
+
+```text
+GET /api/v1/auth/me
+```
+
+It verifies the bearer token and resolves the identity to a local Principal. Local
+just-in-time provisioning is controlled by `ATLAS_IDENTITY_JIT_ENABLED` and is enabled by
+default for local development. Set it to `false` when local users must be provisioned by an
+explicit administrative workflow:
+
+```text
+ATLAS_IDENTITY_JIT_ENABLED=false
+```
+
+The `atlasrag-web` client adds `atlasrag-api` to the access-token audience through a protocol
+mapper, which allows the API verifier to enforce its configured audience.

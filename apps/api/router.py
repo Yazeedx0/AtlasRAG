@@ -8,7 +8,10 @@ one ``include_router`` call below.
 
 from fastapi import APIRouter
 
+from apps.api.routes import authentication
+
 api_router = APIRouter(prefix="/api/v1")
+api_router.include_router(authentication.router)
 
 # Feature routers are registered here, e.g.:
 #

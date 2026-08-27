@@ -7,7 +7,8 @@
 
 **Implementation status:** The Keycloak verifier, bootstrap lifecycle wiring, and FastAPI
 bearer-token dependency are implemented. Local identity resolution remains a separate
-application-service step for protected business routes.
+application-service step for protected business routes and is exposed by the initial
+`GET /api/v1/auth/me` integration endpoint.
 
 ---
 
@@ -619,4 +620,5 @@ The authentication boundary is implemented when:
 - application code outside the adapter contains no Keycloak-specific token-verification logic.
 
 The remaining work for the complete identity vertical slice is local identity resolution
-on protected business routes and integration tests against the disposable Keycloak realm.
+for additional protected business routes and integration tests against the disposable
+Keycloak realm.

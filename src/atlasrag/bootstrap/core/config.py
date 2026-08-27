@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     KEYCLOAK_TIMEOUT_SECONDS: float = 5.0
     KEYCLOAK_JWKS_CACHE_TTL_SECONDS: float = 3600.0
     KEYCLOAK_JWKS_REFRESH_COOLDOWN_SECONDS: float = 30.0
+    IDENTITY_JIT_ENABLED: bool = True
     model_config = SettingsConfigDict(
         env_prefix="ATLAS_",
         env_file=".env",

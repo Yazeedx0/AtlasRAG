@@ -39,3 +39,11 @@ class IdentityProvisioningConflict(IdentityProvisioningError):
     identity. Unlike IdentityAlreadyProvisioned, this is not expected during
     normal concurrent provisioning and indicates the race could not be
     resolved."""
+
+
+class PrincipalNotFound(IdentityError):
+    """Raised when a principal does not exist."""
+
+
+class PrincipalRetired(IdentityError):
+    """Raised when an operation is not valid for a retired principal."""

@@ -3,12 +3,18 @@ from types import TracebackType
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from atlasrag.contracts.identity import IdentityRepository
-from atlasrag.platform.database.identity.repository import SqlAlchemyIdentityRepository
+from atlasrag.contracts.identity import IdentityRepository, PrincipalRepository
+from atlasrag.modules.identity.repositories.identity_repository import (
+    SqlAlchemyIdentityRepository,
+)
+from atlasrag.modules.identity.repositories.principal_repository import (
+    SqlAlchemyPrincipalRepository,
+)
 
 
 class SqlAlchemyIdentityUnitOfWork:
     identities: IdentityRepository
+    principals: PrincipalRepository
 
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._session_factory = session_factory
@@ -17,6 +23,7 @@ class SqlAlchemyIdentityUnitOfWork:
     async def __aenter__(self) -> "SqlAlchemyIdentityUnitOfWork":
         self._session = self._session_factory()
         self.identities = SqlAlchemyIdentityRepository(self._session)
+        self.principals = SqlAlchemyPrincipalRepository(self._session)
         return self
 
     async def __aexit__(

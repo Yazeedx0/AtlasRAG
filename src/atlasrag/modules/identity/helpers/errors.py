@@ -8,6 +8,8 @@ from atlasrag.contracts.identity_errors import (
     LocalIdentityDisabled,
     LocalIdentityNotProvisioned,
     LocalIdentityRetired,
+    PrincipalNotFound,
+    PrincipalRetired
 )
 
 __all__ = [
@@ -20,4 +22,6 @@ __all__ = [
     "LocalIdentityDisabled",
     "LocalIdentityNotProvisioned",
     "LocalIdentityRetired",
+    "PrincipalNotFound", 
+    "PrincipalRetired"
 ]

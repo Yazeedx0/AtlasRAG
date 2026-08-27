@@ -4,9 +4,6 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-# Pragmatic modular-monolith exception: the identity persistence adapter
-# imports the ORM models directly from modules.identity.models instead of
-# resolving tables via Base.metadata, to avoid hidden import-order coupling.
 from atlasrag.contracts.authentication import AuthenticatedIdentity
 from atlasrag.contracts.identity import LocalUserIdentity
 from atlasrag.contracts.identity_errors import IdentityAlreadyProvisioned

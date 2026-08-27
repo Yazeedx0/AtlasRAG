@@ -37,8 +37,30 @@ class IdentityRepository(Protocol):
         ...
 
 
+@dataclass(frozen=True, slots=True)
+class PrincipalState:
+    principal_id: UUID
+    is_active: bool
+    deleted_at: datetime | None
+
+
+class PrincipalRepository(Protocol):
+    async def find_by_id(self, principal_id: UUID) -> PrincipalState | None:
+        ...
+
+    async def activate(self, principal_id: UUID) -> None:
+        ...
+
+    async def deactivate(self, principal_id: UUID) -> None:
+        ...
+
+    async def retire(self, principal_id: UUID) -> None:
+        ...
+
+
 class IdentityUnitOfWork(Protocol):
     identities: IdentityRepository
+    principals: PrincipalRepository
 
     async def __aenter__(self) -> "IdentityUnitOfWork":
         ...

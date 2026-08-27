@@ -30,11 +30,12 @@ dependencies = [
     # ingestion
     "docling>=2.14",
     # security
-    "pyjwt>=2.10",
+    "pyjwt[crypto]>=2.10",
     "argon2-cffi>=23.1",
     # observability
     "langfuse>=2.55",
     "structlog>=24.4",
+    "httpx>=0.28.1",
 ]
 
 [project.optional-dependencies]

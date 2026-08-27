@@ -8,6 +8,9 @@ services:
       POSTGRES_DB: ${ATLAS_POSTGRES_DB:-atlasrag}
       POSTGRES_USER: ${ATLAS_POSTGRES_USER:-atlas}
       POSTGRES_PASSWORD: ${ATLAS_POSTGRES_PASSWORD:-atlas_dev_password}
+      ATLAS_KEYCLOAK_DB: ${ATLAS_KEYCLOAK_DB:-keycloak}
+      ATLAS_KEYCLOAK_DB_USER: ${ATLAS_KEYCLOAK_DB_USER:-keycloak}
+      ATLAS_KEYCLOAK_DB_PASSWORD: ${ATLAS_KEYCLOAK_DB_PASSWORD:-keycloak_dev_password}
 
     ports:
       - "${ATLAS_POSTGRES_PORT:-5432}:5432"
@@ -15,6 +18,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+      - ./postgres/002-keycloak.sh:/docker-entrypoint-initdb.d/002-keycloak.sh:ro
 
     healthcheck:
       test:
@@ -26,6 +30,34 @@ services:
       timeout: 5s
       retries: 5
       start_period: 5s
+
+    restart: unless-stopped
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.2
+    command:
+      - start-dev
+      - --import-realm
+
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres
+      KC_DB_URL_PORT: 5432
+      KC_DB_URL_DATABASE: ${ATLAS_KEYCLOAK_DB:-keycloak}
+      KC_DB_USERNAME: ${ATLAS_KEYCLOAK_DB_USER:-keycloak}
+      KC_DB_PASSWORD: ${ATLAS_KEYCLOAK_DB_PASSWORD:-keycloak_dev_password}
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${ATLAS_KEYCLOAK_ADMIN_USERNAME:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${ATLAS_KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_HOSTNAME: "http://localhost:${ATLAS_KEYCLOAK_PORT:-8080}"
+    ports:
+      - "127.0.0.1:${ATLAS_KEYCLOAK_PORT:-8080}:8080"
+
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import:ro
+
+    depends_on:
+      postgres:
+        condition: service_healthy
 
     restart: unless-stopped
 

@@ -1,18 +1,11 @@
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 
 from apps.api.router import api_router
 from apps.api.routes import health
+from atlasrag.bootstrap.lifespan import lifespan
 from src import get_settings
 
 settings = get_settings()
-
-
-@asynccontextmanager
-async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    yield
 
 
 def create_app() -> FastAPI:

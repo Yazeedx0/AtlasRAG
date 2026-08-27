@@ -5,6 +5,10 @@
 **Contract owner:** `src/atlasrag/contracts/authentication.py`  
 **Provider adapter:** `src/atlasrag/platform/auth/keycloak.py`
 
+**Implementation status:** The Keycloak verifier, bootstrap lifecycle wiring, and FastAPI
+bearer-token dependency are implemented. Local identity resolution remains a separate
+application-service step for protected business routes.
+
 ---
 
 ## 1. Objective
@@ -188,10 +192,22 @@ Reason: authentication and AtlasRAG authorization are intentionally separated.
 
 `KeycloakTokenVerifier` lives in infrastructure/platform code.
 
-Recommended location:
+Implemented location:
 
 ```text
 src/atlasrag/platform/auth/keycloak.py
+```
+
+The verifier is constructed by:
+
+```text
+src/atlasrag/bootstrap/lifespan.py
+```
+
+FastAPI routes authenticate requests through:
+
+```text
+apps/api/dependencies/authentication.py:get_authenticated_identity
 ```
 
 It is responsible for:
@@ -229,6 +245,8 @@ Operational expectations:
 - repeated unknown keys must not create an unbounded network retry loop;
 - the implementation must fail closed when signature trust cannot be established.
 
+The current adapter uses an async HTTP client, caches signing keys for a configured TTL,
+and allows one controlled refresh for an unknown `kid` subject to a refresh cooldown.
 The exact cache mechanism belongs to the Keycloak adapter, not the contract.
 
 ---
@@ -246,6 +264,17 @@ OIDC discovery or JWKS location derived from issuer where possible
 allowed algorithms
 network timeout
 JWKS cache/refresh settings
+```
+
+The current environment-backed settings are:
+
+```text
+ATLAS_KEYCLOAK_ISSUER
+ATLAS_KEYCLOAK_AUDIENCE
+ATLAS_KEYCLOAK_ALGORITHMS
+ATLAS_KEYCLOAK_TIMEOUT_SECONDS
+ATLAS_KEYCLOAK_JWKS_CACHE_TTL_SECONDS
+ATLAS_KEYCLOAK_JWKS_REFRESH_COOLDOWN_SECONDS
 ```
 
 Secrets should only be required when the chosen OIDC flow actually requires them. Verifying a public-key-signed access token should not require embedding a realm private key in AtlasRAG.
@@ -538,6 +567,15 @@ bootstrap
    wires it to API/application dependencies
 ```
 
+Current composition:
+
+```text
+bootstrap/lifespan.py
+    -> KeycloakTokenVerifier
+    -> application.state.token_verifier
+    -> get_authenticated_identity
+```
+
 Forbidden:
 
 ```text
@@ -566,7 +604,7 @@ Provider-internal refactors that continue to satisfy this contract do not requir
 
 ## 19. v1 Definition of Done
 
-The authentication integration is ready when:
+The authentication boundary is implemented when:
 
 - `AuthenticatedIdentity` exists;
 - `TokenVerifier` Protocol exists;
@@ -579,3 +617,6 @@ The authentication integration is ready when:
 - local disabled/retired identity is enforced;
 - integration tests against Keycloak pass;
 - application code outside the adapter contains no Keycloak-specific token-verification logic.
+
+The remaining work for the complete identity vertical slice is local identity resolution
+on protected business routes and integration tests against the disposable Keycloak realm.

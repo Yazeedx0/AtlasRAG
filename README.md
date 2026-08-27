@@ -47,11 +47,29 @@ The dependency rule: `modules → platform → contracts`. Modules never import 
 ```bash
 uv sync --all-extras --dev
 cp .env.example .env          # fill in the keys
-make dev                      # postgres+pgvector, redis, langfuse
+make dev                      # postgres+pgvector and Keycloak
 make migrate
 make ingest
 make eval                     # writes a report to evals/reports/
 ```
+
+### Authentication
+
+Local authentication uses Keycloak. Start the database and Keycloak services with:
+
+```bash
+docker compose -f infra/docker-compose.yml up -d postgres keycloak
+```
+
+Keycloak is available at <http://localhost:8080>. The imported realm is `atlas`, with
+the API client `atlasrag-api`; configuration and admin instructions are documented in
+[`infra/keycloak/README.md`](infra/keycloak/README.md).
+
+Protected FastAPI routes can use the reusable
+`get_authenticated_identity` dependency from
+[`apps/api/dependencies/authentication.py`](apps/api/dependencies/authentication.py).
+It verifies the bearer token and returns `AuthenticatedIdentity`. Mapping that external
+identity to a local AtlasRAG Principal remains the responsibility of `IdentityResolver`.
 
 ## Scoreboard
 

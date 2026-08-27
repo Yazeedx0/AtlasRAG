@@ -1,14 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import (
-    DateTime,
-    ForeignKey,
-    String,
-    text,
-    CheckConstraint,
-    Index
-)
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, String, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
@@ -17,7 +10,6 @@ from atlasrag.platform.database.base import Base
 
 
 class UserIdentifier(Base):
-
     __tablename__ = "user_identifier"
     __table_args__ = (
         CheckConstraint(

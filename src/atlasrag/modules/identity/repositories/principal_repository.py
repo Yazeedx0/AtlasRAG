@@ -1,10 +1,8 @@
 import uuid
 from datetime import datetime
-
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.elements import ClauseElement
-
 from atlasrag.contracts.identity import PrincipalState
 from atlasrag.modules.identity.models import Principal
 

@@ -58,6 +58,16 @@ class PrincipalRepository(Protocol):
         ...
 
 
+class UserIdentifierRepository(Protocol):
+    async def close_active_for_user(
+        self,
+        user_principal_id: UUID,
+        *,
+        closed_at: datetime,
+    ) -> None:
+        ...
+
+
 class IdentityUnitOfWork(Protocol):
     identities: IdentityRepository
     principals: PrincipalRepository

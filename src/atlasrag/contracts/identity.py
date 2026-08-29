@@ -79,11 +79,11 @@ class GroupMembershipRepository(Protocol):
     ) -> None:
         ...
 
-    async def has_group_path(
+    async def would_create_cycle(
         self,
         *,
-        start_group_id: UUID,
-        target_group_id: UUID,
+        group_principal_id: UUID,
+        member_group_principal_id: UUID,
     ) -> bool:
         ...
 

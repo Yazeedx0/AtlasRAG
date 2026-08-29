@@ -74,7 +74,7 @@ async def make_membership_database(
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_has_group_path_detects_transitive_active_path(
+async def test_would_create_cycle_detects_transitive_active_path(
     identity_database: tuple[AsyncEngine, async_sessionmaker[AsyncSession]],
 ) -> None:
     _, session_factory = identity_database
@@ -83,9 +83,9 @@ async def test_has_group_path_detects_transitive_active_path(
     async with session_factory() as session:
         repository = SqlAlchemyGroupMembershipRepository(session)
 
-        result = await repository.has_group_path(
-            start_group_id=member_group_id,
-            target_group_id=target_group_id,
+        result = await repository.would_create_cycle(
+            group_principal_id=target_group_id,
+            member_group_principal_id=member_group_id,
         )
 
     assert result is True
@@ -93,7 +93,7 @@ async def test_has_group_path_detects_transitive_active_path(
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_has_group_path_ignores_removed_membership(
+async def test_would_create_cycle_ignores_removed_membership(
     identity_database: tuple[AsyncEngine, async_sessionmaker[AsyncSession]],
 ) -> None:
     _, session_factory = identity_database
@@ -105,9 +105,9 @@ async def test_has_group_path_ignores_removed_membership(
     async with session_factory() as session:
         repository = SqlAlchemyGroupMembershipRepository(session)
 
-        result = await repository.has_group_path(
-            start_group_id=member_group_id,
-            target_group_id=target_group_id,
+        result = await repository.would_create_cycle(
+            group_principal_id=target_group_id,
+            member_group_principal_id=member_group_id,
         )
 
     assert result is False

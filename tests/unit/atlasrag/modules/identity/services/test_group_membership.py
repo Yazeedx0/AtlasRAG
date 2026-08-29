@@ -15,7 +15,7 @@ from atlasrag.modules.identity.enums import PrincipalType
 from atlasrag.modules.identity.helpers.errors import (
     GroupMemberTypeNotAllowed,
     GroupMembershipAlreadyExists,
-    GroupMembershipCycle,
+    GroupCycleDetected,
     GroupPrincipalRequired,
     GroupSelfMembership,
     InvalidPrincipalType,
@@ -41,14 +41,14 @@ class FakeMembershipRepository:
         self,
         *,
         has_active_membership: bool = False,
-        has_group_path: bool = False,
+        would_create_cycle: bool = False,
         add_error: BaseException | None = None,
     ) -> None:
         self._has_active_membership = has_active_membership
-        self._has_group_path = has_group_path
+        self._would_create_cycle = would_create_cycle
         self._add_error = add_error
         self.duplicate_checks: list[tuple[UUID, UUID]] = []
-        self.group_path_checks: list[tuple[UUID, UUID]] = []
+        self.cycle_checks: list[tuple[UUID, UUID]] = []
         self.add_calls: list[dict[str, object]] = []
 
     async def has_active_membership(
@@ -60,14 +60,14 @@ class FakeMembershipRepository:
         self.duplicate_checks.append((group_principal_id, member_principal_id))
         return self._has_active_membership
 
-    async def has_group_path(
+    async def would_create_cycle(
         self,
         *,
-        start_group_id: UUID,
-        target_group_id: UUID,
+        group_principal_id: UUID,
+        member_group_principal_id: UUID,
     ) -> bool:
-        self.group_path_checks.append((start_group_id, target_group_id))
-        return self._has_group_path
+        self.cycle_checks.append((group_principal_id, member_group_principal_id))
+        return self._would_create_cycle
 
     async def add_membership(
         self,
@@ -141,7 +141,7 @@ def make_service(
     states: Iterable[PrincipalState],
     *,
     has_active_membership: bool = False,
-    has_group_path: bool = False,
+    would_create_cycle: bool = False,
     add_error: BaseException | None = None,
 ) -> tuple[
     GroupMembershipService,
@@ -152,7 +152,7 @@ def make_service(
     principals = FakePrincipalRepository(states)
     memberships = FakeMembershipRepository(
         has_active_membership=has_active_membership,
-        has_group_path=has_group_path,
+        would_create_cycle=would_create_cycle,
         add_error=add_error,
     )
     uow = FakeUnitOfWork(principals, memberships)
@@ -184,7 +184,7 @@ async def test_add_group_member_adds_membership_and_commits() -> None:
 
     assert principals.find_calls == [group_id, member_id]
     assert memberships.duplicate_checks == [(group_id, member_id)]
-    assert memberships.group_path_checks == []
+    assert memberships.cycle_checks == []
     assert memberships.add_calls == [
         {
             "group_principal_id": group_id,
@@ -241,7 +241,7 @@ async def test_add_group_member_validates_target_group(
 
     assert principals.find_calls == [group_id]
     assert memberships.duplicate_checks == []
-    assert memberships.group_path_checks == []
+    assert memberships.cycle_checks == []
     assert memberships.add_calls == []
     assert uow.committed is False
     assert uow.exit_exception_type is expected_error
@@ -287,7 +287,7 @@ async def test_add_group_member_validates_member(
 
     assert principals.find_calls == [group_id, member_id]
     assert memberships.duplicate_checks == []
-    assert memberships.group_path_checks == []
+    assert memberships.cycle_checks == []
     assert memberships.add_calls == []
     assert uow.committed is False
     assert uow.exit_exception_type is expected_error
@@ -310,7 +310,7 @@ async def test_add_group_member_rejects_self_membership() -> None:
 
     assert principals.find_calls == []
     assert memberships.duplicate_checks == []
-    assert memberships.group_path_checks == []
+    assert memberships.cycle_checks == []
     assert uow.committed is False
     assert error.value.group_id == group_id
     assert error.value.member_id == group_id
@@ -356,10 +356,10 @@ async def test_add_group_member_rejects_group_cycle() -> None:
             make_state(group_id, PrincipalType.GROUP),
             make_state(member_group_id, PrincipalType.GROUP),
         ],
-        has_group_path=True,
+        would_create_cycle=True,
     )
 
-    with pytest.raises(GroupMembershipCycle) as error:
+    with pytest.raises(GroupCycleDetected) as error:
         await service.add_group_member(
             group_id,
             member_group_id,
@@ -369,10 +369,10 @@ async def test_add_group_member_rejects_group_cycle() -> None:
 
     assert principals.find_calls == [group_id, member_group_id]
     assert memberships.duplicate_checks == [(group_id, member_group_id)]
-    assert memberships.group_path_checks == [(member_group_id, group_id)]
+    assert memberships.cycle_checks == [(group_id, member_group_id)]
     assert memberships.add_calls == []
     assert uow.committed is False
-    assert uow.exit_exception_type is GroupMembershipCycle
+    assert uow.exit_exception_type is GroupCycleDetected
     assert error.value.group_id == group_id
     assert error.value.member_id == member_group_id
 
@@ -400,6 +400,6 @@ async def test_add_group_member_propagates_repository_error_without_commit() -> 
 
     assert principals.find_calls == [group_id, member_id]
     assert memberships.duplicate_checks == [(group_id, member_id)]
-    assert memberships.group_path_checks == []
+    assert memberships.cycle_checks == []
     assert uow.committed is False
     assert uow.exit_exception_type is RuntimeError

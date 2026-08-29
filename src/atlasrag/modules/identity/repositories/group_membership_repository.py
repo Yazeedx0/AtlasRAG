@@ -44,16 +44,16 @@ class SqlAlchemyGroupMembershipRepository:
         )
         return bool(await self._session.scalar(statement))
 
-    async def has_group_path(
+    async def would_create_cycle(
         self,
         *,
-        start_group_id: uuid.UUID,
-        target_group_id: uuid.UUID,
+        group_principal_id: uuid.UUID,
+        member_group_principal_id: uuid.UUID,
     ) -> bool:
         reachable_groups = (
             select(GroupMembership.member_principal_id.label("group_id"))
             .where(
-                GroupMembership.group_principal_id == start_group_id,
+                GroupMembership.group_principal_id == member_group_principal_id,
                 GroupMembership.member_type == PrincipalType.GROUP,
                 GroupMembership.removed_at.is_(None),
             )
@@ -67,7 +67,7 @@ class SqlAlchemyGroupMembershipRepository:
         reachable_groups = reachable_groups.union(recursive_step)
 
         statement = select(
-            exists().where(reachable_groups.c.group_id == target_group_id),
+            exists().where(reachable_groups.c.group_id == group_principal_id),
         )
         return bool(await self._session.scalar(statement))
 

@@ -7,7 +7,7 @@ from atlasrag.modules.identity.enums import PrincipalType
 from atlasrag.modules.identity.helpers.errors import (
     GroupMemberTypeNotAllowed,
     GroupMembershipAlreadyExists,
-    GroupMembershipCycle,
+    GroupCycleDetected,
     GroupPrincipalRequired,
     GroupSelfMembership,
     InvalidPrincipalType,
@@ -46,11 +46,11 @@ class GroupMembershipService:
             ):
                 raise GroupMembershipAlreadyExists(group_id=group_id, member_id=member_id)
 
-            if member_type == PrincipalType.GROUP and await uow.memberships.has_group_path(
-                start_group_id=member_id,
-                target_group_id=group_id,
+            if member_type == PrincipalType.GROUP and await uow.memberships.would_create_cycle(
+                group_principal_id=group_id,
+                member_group_principal_id=member_id,
             ):
-                raise GroupMembershipCycle(group_id=group_id, member_id=member_id)
+                raise GroupCycleDetected(group_id=group_id, member_id=member_id)
 
             await uow.memberships.add_membership(
                 group_principal_id=group_id,

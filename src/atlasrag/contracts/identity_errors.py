@@ -115,7 +115,7 @@ class GroupSelfMembership(IdentityError):
         )
 
 
-class GroupMembershipCycle(IdentityError):
+class GroupCycleDetected(IdentityError):
     """Raised when a group membership would create a cycle."""
 
     def __init__(self, *, group_id: UUID, member_id: UUID) -> None:

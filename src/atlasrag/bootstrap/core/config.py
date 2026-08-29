@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     KEYCLOAK_ISSUER: AnyHttpUrl = "http://localhost:8080/realms/atlasrag"
+    KEYCLOAK_DISCOVERY_URL: AnyHttpUrl = (
+        "http://localhost:8080/realms/atlasrag/.well-known/openid-configuration"
+    )
     KEYCLOAK_AUDIENCE: str = "atlasrag-api"
     KEYCLOAK_ALGORITHMS: tuple[str, ...] = ("RS256",)
     KEYCLOAK_TIMEOUT_SECONDS: float = 5.0

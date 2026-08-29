@@ -13,6 +13,7 @@ settings = get_settings()
 async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
     verifier = KeycloakTokenVerifier(
         issuer=str(settings.KEYCLOAK_ISSUER),
+        discovery_url=str(settings.KEYCLOAK_DISCOVERY_URL),
         audience=settings.KEYCLOAK_AUDIENCE,
         algorithms=settings.KEYCLOAK_ALGORITHMS,
         timeout_seconds=settings.KEYCLOAK_TIMEOUT_SECONDS,

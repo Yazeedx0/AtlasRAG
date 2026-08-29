@@ -21,16 +21,19 @@ class KeycloakTokenVerifier:
         self,
         *,
         issuer: str,
+        discovery_url: str,
         audience: str,
         algorithms: Sequence[str] = ("RS256",),
-        timeout_seconds: float = 5.0,
-        jwks_cache_ttl_seconds: float = 3600.0,
-        jwks_refresh_cooldown_seconds: float = 30.0,
+        timeout_seconds: float,
+        jwks_cache_ttl_seconds: float,
+        jwks_refresh_cooldown_seconds: float,
         http_client: httpx.AsyncClient | None = None,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         if not issuer:
             raise ValueError("Keycloak issuer must not be empty")
+        if not discovery_url:
+            raise ValueError("Keycloak discovery URL must not be empty")
         if not audience:
             raise ValueError("Keycloak audience must not be empty")
         if not algorithms:
@@ -43,6 +46,7 @@ class KeycloakTokenVerifier:
             raise ValueError("JWKS refresh cooldown must not be negative")
 
         self._issuer = issuer.rstrip("/")
+        self._discovery_url = discovery_url.rstrip("/")
         self._audience = audience
         self._algorithms = tuple(algorithms)
         self._jwks_cache_ttl_seconds = jwks_cache_ttl_seconds
@@ -120,9 +124,7 @@ class KeycloakTokenVerifier:
                 if now - self._last_refresh_at < self._jwks_refresh_cooldown_seconds:
                     return
 
-            discovery = await self._get_json(
-                f"{self._issuer}/.well-known/openid-configuration"
-            )
+            discovery = await self._get_json(self._discovery_url)
             jwks_uri = discovery.get("jwks_uri")
             if not isinstance(jwks_uri, str) or not jwks_uri:
                 raise TokenVerificationError("Keycloak discovery has no JWKS URI")

@@ -10,6 +10,12 @@ bearer-token dependency are implemented. Local identity resolution remains a sep
 application-service step for protected business routes and is exposed by the initial
 `GET /api/v1/auth/me` integration endpoint.
 
+**Session ownership decision:** AtlasRAG is a stateless resource server in v1. It does not
+implement login, callback, logout, refresh-token, or authentication-session endpoints and
+does not persist browser sessions or refresh tokens. Keycloak owns the authentication
+lifecycle; the frontend or BFF obtains and manages tokens, then sends an access token to
+AtlasRAG. AtlasRAG only validates the bearer access token on each request.
+
 ---
 
 ## 1. Objective
@@ -34,6 +40,28 @@ IdentityResolver / local identity logic
 ```
 
 The contract deliberately does **not** perform document authorization, role traversal, group traversal, or local user provisioning itself.
+
+### Request ownership
+
+```text
+Frontend / BFF
+    |  login, callback, token handling, logout
+    v
+Keycloak
+    |  access token
+    v
+AtlasRAG API
+    |  bearer verification
+    |  local identity resolution
+    |  AtlasRAG authorization
+    v
+Protected resource
+```
+
+The absence of login/session/refresh/logout routes in AtlasRAG is intentional and is not
+considered an incomplete authentication implementation for this architecture. A future
+frontend or BFF must use an appropriate OIDC flow, but that implementation is outside the
+AtlasRAG API authentication boundary.
 
 ---
 
@@ -226,6 +254,8 @@ It is responsible for:
 
 It is **not** responsible for:
 
+- login, OIDC callbacks, logout, or refresh-token handling;
+- storing browser sessions or refresh tokens;
 - opening application database transactions;
 - creating local users;
 - role/group resolution;

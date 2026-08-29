@@ -71,6 +71,12 @@ Protected FastAPI routes can use the reusable
 It verifies the bearer token and returns `AuthenticatedIdentity`. Mapping that external
 identity to a local AtlasRAG Principal remains the responsibility of `IdentityResolver`.
 
+AtlasRAG is a stateless resource server: it intentionally does not implement login,
+OIDC callbacks, logout, refresh-token handling, or browser session persistence. Keycloak
+owns the authentication lifecycle, and the frontend/BFF obtains the access token and sends
+it to the API. The API is responsible for token verification, local identity resolution,
+and AtlasRAG authorization.
+
 ## Scoreboard
 
 Baseline and per-phase results land in `evals/reports/`, each tagged with its commit hash

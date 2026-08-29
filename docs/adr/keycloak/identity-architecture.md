@@ -95,6 +95,34 @@ Keycloak owns, among other things:
 
 AtlasRAG receives an access token and verifies that it can be trusted.
 
+AtlasRAG is intentionally a stateless resource server in v1. The API does not expose or
+persist its own login, OIDC callback, logout, refresh-token, or authentication-session
+lifecycle. Keycloak owns those concerns, while the frontend or BFF is responsible for
+obtaining and presenting the access token. The API validates that token on every request,
+then performs local identity resolution and authorization.
+
+The intended request flow is:
+
+```text
+Frontend / BFF
+      | login, callback, token handling, logout
+      v
+Keycloak
+      | access token
+      v
+AtlasRAG API
+      | verify bearer token
+      | resolve (issuer, subject) to local Principal
+      | enforce AtlasRAG authorization
+      v
+Protected resource / retrieval
+```
+
+Therefore, the absence of session tables or authentication lifecycle endpoints in AtlasRAG
+is a deliberate boundary decision, not a missing v1 feature. JWT access tokens remain
+accepted until their normal expiry unless a separate revocation/introspection policy is
+introduced for sensitive operations.
+
 ### 3.2 Identity
 
 Identity answers:
@@ -851,6 +879,7 @@ Keycloak SDK/library exceptions must not leak through module boundaries.
 The following are intentionally outside the v1 Identity scope unless explicitly added later:
 
 - storing local passwords;
+- implementing login, OIDC callback, logout, or authentication sessions inside AtlasRAG;
 - implementing refresh-token rotation inside AtlasRAG;
 - persisting Keycloak sessions in AtlasRAG;
 - treating Keycloak roles/groups as the document-ACL source of truth;

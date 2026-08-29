@@ -47,3 +47,27 @@ class PrincipalNotFound(IdentityError):
 
 class PrincipalRetired(IdentityError):
     """Raised when an operation is not valid for a retired principal."""
+
+
+class PrincipalInactive(IdentityError):
+    """Raised when an operation requires an active principal."""
+
+
+class GroupPrincipalRequired(IdentityError):
+    """Raised when a group operation targets a non-group principal."""
+
+
+class GroupMemberTypeNotAllowed(IdentityError):
+    """Raised when a group member is not a user or group."""
+
+
+class GroupSelfMembership(IdentityError):
+    """Raised when a group is added as a member of itself."""
+
+
+class GroupMembershipCycle(IdentityError):
+    """Raised when a group membership would create a cycle."""
+
+
+class GroupMembershipAlreadyExists(IdentityError):
+    """Raised when an active membership already exists for the group/member pair."""

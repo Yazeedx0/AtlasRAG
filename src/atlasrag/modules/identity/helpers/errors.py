@@ -5,11 +5,17 @@ from atlasrag.contracts.identity_errors import (
     IdentityProvisioningConflict,
     IdentityProvisioningError,
     IdentityResolutionError,
+    GroupMemberTypeNotAllowed,
+    GroupMembershipAlreadyExists,
+    GroupMembershipCycle,
+    GroupPrincipalRequired,
+    GroupSelfMembership,
     LocalIdentityDisabled,
     LocalIdentityNotProvisioned,
     LocalIdentityRetired,
+    PrincipalInactive,
     PrincipalNotFound,
-    PrincipalRetired
+    PrincipalRetired,
 )
 
 __all__ = [
@@ -19,9 +25,15 @@ __all__ = [
     "IdentityProvisioningConflict",
     "IdentityProvisioningError",
     "IdentityResolutionError",
+    "GroupMembershipAlreadyExists",
+    "GroupMembershipCycle",
+    "GroupMemberTypeNotAllowed",
+    "GroupPrincipalRequired",
+    "GroupSelfMembership",
     "LocalIdentityDisabled",
     "LocalIdentityNotProvisioned",
     "LocalIdentityRetired",
-    "PrincipalNotFound", 
-    "PrincipalRetired"
+    "PrincipalInactive",
+    "PrincipalNotFound",
+    "PrincipalRetired",
 ]

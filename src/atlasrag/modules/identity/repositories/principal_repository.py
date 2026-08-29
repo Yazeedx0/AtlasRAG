@@ -14,6 +14,7 @@ class SqlAlchemyPrincipalRepository:
     async def find_by_id(self, principal_id: uuid.UUID) -> PrincipalState | None:
         statement = select(
             Principal.id,
+            Principal.type,
             Principal.is_active,
             Principal.deleted_at,
         ).where(Principal.id == principal_id).with_for_update()
@@ -27,6 +28,7 @@ class SqlAlchemyPrincipalRepository:
             principal_id=row.id,
             is_active=row.is_active,
             deleted_at=row.deleted_at,
+            type=row.type,
         )
 
     async def activate(self, principal_id: uuid.UUID) -> None:

@@ -2,6 +2,7 @@ from atlasrag.platform.database.models import Role, UserIdentifier, UserRole, Us
 
 from .iam import Principal
 from .group import Group
+from .group_membership import GroupMembership
 
 __all__ = [
     "Principal",
@@ -9,5 +10,6 @@ __all__ = [
     "Users",
     "UserIdentifier",
     "UserRole",
-    "Group"
+    "Group",
+    "GroupMembership",
 ]

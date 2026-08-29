@@ -3,7 +3,14 @@ from types import TracebackType
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from atlasrag.contracts.identity import IdentityRepository, PrincipalRepository
+from atlasrag.contracts.identity import (
+    GroupMembershipRepository,
+    IdentityRepository,
+    PrincipalRepository,
+)
+from atlasrag.modules.identity.repositories.group_membership_repository import (
+    SqlAlchemyGroupMembershipRepository,
+)
 from atlasrag.modules.identity.repositories.identity_repository import (
     SqlAlchemyIdentityRepository,
 )
@@ -15,6 +22,7 @@ from atlasrag.modules.identity.repositories.principal_repository import (
 class SqlAlchemyIdentityUnitOfWork:
     identities: IdentityRepository
     principals: PrincipalRepository
+    memberships: GroupMembershipRepository
 
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._session_factory = session_factory
@@ -24,6 +32,7 @@ class SqlAlchemyIdentityUnitOfWork:
         self._session = self._session_factory()
         self.identities = SqlAlchemyIdentityRepository(self._session)
         self.principals = SqlAlchemyPrincipalRepository(self._session)
+        self.memberships = SqlAlchemyGroupMembershipRepository(self._session)
         return self
 
     async def __aexit__(

@@ -27,29 +27,29 @@ class GroupMembershipService:
         actor_id: UUID,
         added_at: datetime,
     ) -> None:
+        if group_id == member_id:
+            raise GroupSelfMembership(group_id=group_id, member_id=member_id)
+
         async with self._uow_factory() as uow:
-            group = await self._get_principal(uow, group_id)
-            self._ensure_active(group)
+            group = await self._get_principal(uow, group_id, role="group")
+            self._ensure_active(group, role="group")
             self._ensure_group(group)
 
-            member = await self._get_principal(uow, member_id)
-            self._ensure_active(member)
+            member = await self._get_principal(uow, member_id, role="member")
+            self._ensure_active(member, role="member")
             member_type = self._get_allowed_member_type(member)
-
-            if group_id == member_id:
-                raise GroupSelfMembership
 
             if await uow.memberships.has_active_membership(
                 group_principal_id=group_id,
                 member_principal_id=member_id,
             ):
-                raise GroupMembershipAlreadyExists
+                raise GroupMembershipAlreadyExists(group_id=group_id, member_id=member_id)
 
             if member_type == PrincipalType.GROUP and await uow.memberships.has_group_path(
                 start_group_id=member_id,
                 target_group_id=group_id,
             ):
-                raise GroupMembershipCycle
+                raise GroupMembershipCycle(group_id=group_id, member_id=member_id)
 
             await uow.memberships.add_membership(
                 group_principal_id=group_id,
@@ -64,31 +64,39 @@ class GroupMembershipService:
     async def _get_principal(
         uow: GroupMembershipUnitOfWork,
         principal_id: UUID,
+        *,
+        role: str,
     ) -> PrincipalState:
         principal = await uow.principals.find_by_id(principal_id)
         if principal is None:
-            raise PrincipalNotFound
+            raise PrincipalNotFound(principal_id=principal_id, role=role)
         return principal
 
     @staticmethod
-    def _ensure_active(principal: PrincipalState) -> None:
+    def _ensure_active(principal: PrincipalState, *, role: str) -> None:
         if principal.deleted_at is not None:
-            raise PrincipalRetired
+            raise PrincipalRetired(principal_id=principal.principal_id, role=role)
         if not principal.is_active:
-            raise PrincipalInactive
+            raise PrincipalInactive(principal_id=principal.principal_id, role=role)
 
     @staticmethod
     def _ensure_group(principal: PrincipalState) -> None:
         if principal.type != PrincipalType.GROUP:
-            raise GroupPrincipalRequired
+            raise GroupPrincipalRequired(principal_id=principal.principal_id)
 
     @staticmethod
     def _get_allowed_member_type(principal: PrincipalState) -> PrincipalType:
         try:
             member_type = PrincipalType(principal.type)
         except (TypeError, ValueError) as error:
-            raise GroupMemberTypeNotAllowed from error
+            raise GroupMemberTypeNotAllowed(
+                principal_id=principal.principal_id,
+                principal_type=principal.type,
+            ) from error
 
         if member_type not in (PrincipalType.USER, PrincipalType.GROUP):
-            raise GroupMemberTypeNotAllowed
+            raise GroupMemberTypeNotAllowed(
+                principal_id=principal.principal_id,
+                principal_type=principal.type,
+            )
         return member_type

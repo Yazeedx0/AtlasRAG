@@ -55,6 +55,7 @@ async def make_membership_database(
                     "member_principal_id": middle_group_id,
                     "member_type": PrincipalType.GROUP,
                     "added_at": added_at,
+                    "removed_at": None,
                 },
                 {
                     "id": uuid4(),

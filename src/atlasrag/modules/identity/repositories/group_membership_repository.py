@@ -96,4 +96,7 @@ class SqlAlchemyGroupMembershipRepository:
         except IntegrityError as error:
             if not _is_active_membership_conflict(error):
                 raise
-            raise GroupMembershipAlreadyExists from error
+            raise GroupMembershipAlreadyExists(
+                group_id=group_principal_id,
+                member_id=member_principal_id,
+            ) from error

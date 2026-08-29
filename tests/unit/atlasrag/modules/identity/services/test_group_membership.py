@@ -298,7 +298,7 @@ async def test_add_group_member_rejects_self_membership() -> None:
         [make_state(group_id, PrincipalType.GROUP)]
     )
 
-    with pytest.raises(GroupSelfMembership):
+    with pytest.raises(GroupSelfMembership) as error:
         await service.add_group_member(
             group_id,
             group_id,
@@ -306,10 +306,14 @@ async def test_add_group_member_rejects_self_membership() -> None:
             datetime.now(timezone.utc),
         )
 
-    assert principals.find_calls == [group_id, group_id]
+    assert principals.find_calls == []
     assert memberships.duplicate_checks == []
     assert memberships.group_path_checks == []
     assert uow.committed is False
+    assert error.value.group_id == group_id
+    assert error.value.member_id == group_id
+    assert uow.entered is False
+    assert uow.exited is False
 
 
 @pytest.mark.asyncio
@@ -324,7 +328,7 @@ async def test_add_group_member_rejects_duplicate_active_membership() -> None:
         has_active_membership=True,
     )
 
-    with pytest.raises(GroupMembershipAlreadyExists):
+    with pytest.raises(GroupMembershipAlreadyExists) as error:
         await service.add_group_member(
             group_id,
             member_id,
@@ -337,6 +341,8 @@ async def test_add_group_member_rejects_duplicate_active_membership() -> None:
     assert memberships.add_calls == []
     assert uow.committed is False
     assert uow.exit_exception_type is GroupMembershipAlreadyExists
+    assert error.value.group_id == group_id
+    assert error.value.member_id == member_id
 
 
 @pytest.mark.asyncio
@@ -351,7 +357,7 @@ async def test_add_group_member_rejects_group_cycle() -> None:
         has_group_path=True,
     )
 
-    with pytest.raises(GroupMembershipCycle):
+    with pytest.raises(GroupMembershipCycle) as error:
         await service.add_group_member(
             group_id,
             member_group_id,
@@ -365,6 +371,8 @@ async def test_add_group_member_rejects_group_cycle() -> None:
     assert memberships.add_calls == []
     assert uow.committed is False
     assert uow.exit_exception_type is GroupMembershipCycle
+    assert error.value.group_id == group_id
+    assert error.value.member_id == member_group_id
 
 
 @pytest.mark.asyncio

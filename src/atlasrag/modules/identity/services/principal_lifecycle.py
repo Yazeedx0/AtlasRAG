@@ -46,10 +46,10 @@ class PrincipalLifecycle:
     ) -> PrincipalState:
         principal = await uow.principals.find_by_id(principal_id)
         if principal is None:
-            raise PrincipalNotFound
+            raise PrincipalNotFound(principal_id=principal_id, role="principal")
         return principal
 
     @staticmethod
     def _ensure_not_retired(principal: PrincipalState) -> None:
         if principal.deleted_at is not None:
-            raise PrincipalRetired
+            raise PrincipalRetired(principal_id=principal.principal_id, role="principal")

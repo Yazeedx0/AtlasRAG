@@ -1,3 +1,6 @@
+from uuid import UUID
+
+
 class IdentityError(Exception):
     """Base error for AtlasRAG local identity operations."""
 
@@ -44,30 +47,77 @@ class IdentityProvisioningConflict(IdentityProvisioningError):
 class PrincipalNotFound(IdentityError):
     """Raised when a principal does not exist."""
 
+    def __init__(self, *, principal_id: UUID, role: str) -> None:
+        self.principal_id = principal_id
+        self.role = role
+        super().__init__(f"{role} principal {principal_id} not found")
+
 
 class PrincipalRetired(IdentityError):
     """Raised when an operation is not valid for a retired principal."""
+
+    def __init__(self, *, principal_id: UUID, role: str) -> None:
+        self.principal_id = principal_id
+        self.role = role
+        super().__init__(f"{role} principal {principal_id} is retired")
 
 
 class PrincipalInactive(IdentityError):
     """Raised when an operation requires an active principal."""
 
+    def __init__(self, *, principal_id: UUID, role: str) -> None:
+        self.principal_id = principal_id
+        self.role = role
+        super().__init__(f"{role} principal {principal_id} is inactive")
+
 
 class GroupPrincipalRequired(IdentityError):
     """Raised when a group operation targets a non-group principal."""
+
+    def __init__(self, *, principal_id: UUID) -> None:
+        self.principal_id = principal_id
+        super().__init__(f"principal {principal_id} is not a group")
 
 
 class GroupMemberTypeNotAllowed(IdentityError):
     """Raised when a group member is not a user or group."""
 
+    def __init__(self, *, principal_id: UUID, principal_type: str | None) -> None:
+        self.principal_id = principal_id
+        self.principal_type = principal_type
+        type_description = principal_type or "unknown"
+        super().__init__(
+            f"principal {principal_id} has unsupported group member type "
+            f"{type_description}"
+        )
+
 
 class GroupSelfMembership(IdentityError):
     """Raised when a group is added as a member of itself."""
+
+    def __init__(self, *, group_id: UUID, member_id: UUID) -> None:
+        self.group_id = group_id
+        self.member_id = member_id
+        super().__init__(
+            f"group {group_id} cannot contain itself as member {member_id}"
+        )
 
 
 class GroupMembershipCycle(IdentityError):
     """Raised when a group membership would create a cycle."""
 
+    def __init__(self, *, group_id: UUID, member_id: UUID) -> None:
+        self.group_id = group_id
+        self.member_id = member_id
+        super().__init__(f"adding group {member_id} to group {group_id} would create a cycle")
+
 
 class GroupMembershipAlreadyExists(IdentityError):
     """Raised when an active membership already exists for the group/member pair."""
+
+    def __init__(self, *, group_id: UUID, member_id: UUID) -> None:
+        self.group_id = group_id
+        self.member_id = member_id
+        super().__init__(
+            f"active membership already exists: group {group_id}, member {member_id}"
+        )

@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 from types import TracebackType
@@ -6,17 +5,11 @@ from typing import Protocol
 from uuid import UUID
 
 from atlasrag.contracts.authentication import AuthenticatedIdentity
+from atlasrag.contracts.identity_types import LocalUserIdentity, PrincipalState
 
 
 class IdentifierType(StrEnum):
     OIDC_SUBJECT = "oidc_subject"
-
-
-@dataclass(frozen=True, slots=True)
-class LocalUserIdentity:
-    principal_id: UUID
-    is_active: bool
-    deleted_at: datetime | None
 
 
 class IdentityRepository(Protocol):
@@ -35,14 +28,6 @@ class IdentityRepository(Protocol):
     ) -> UUID:
         """Atomically create Principal(type=user), User, and UserIdentifier."""
         ...
-
-
-@dataclass(frozen=True, slots=True)
-class PrincipalState:
-    principal_id: UUID
-    is_active: bool
-    deleted_at: datetime | None
-    type: str | None = None
 
 
 class PrincipalRepository(Protocol):

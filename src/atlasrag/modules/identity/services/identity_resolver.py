@@ -5,9 +5,9 @@ from atlasrag.contracts.authentication import AuthenticatedIdentity
 from atlasrag.contracts.identity import (
     IdentityRepository,
     IdentityUnitOfWork,
-    LocalUserIdentity,
     ProvisioningPolicy,
 )
+from atlasrag.contracts.identity_types import LocalUserIdentity
 
 from atlasrag.modules.identity.helpers.errors import (
     IdentityAlreadyProvisioned,

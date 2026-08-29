@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from atlasrag.contracts.identity import PrincipalState
+from atlasrag.contracts.identity_types import PrincipalState
 from atlasrag.modules.identity.helpers.errors import PrincipalNotFound, PrincipalRetired
 from atlasrag.modules.identity.services.principal_lifecycle import PrincipalLifecycle
 

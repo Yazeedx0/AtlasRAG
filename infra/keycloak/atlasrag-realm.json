@@ -1,46 +1,60 @@
 {
-  "realm": "atlas",
+  "realm": "atlasrag",
   "enabled": true,
   "displayName": "AtlasRAG",
   "sslRequired": "none",
   "registrationAllowed": false,
+
   "clients": [
     {
       "clientId": "atlasrag-api",
       "name": "AtlasRAG API",
       "enabled": true,
       "protocol": "openid-connect",
+
       "publicClient": false,
-      "bearerOnly": true,
+      "bearerOnly": false,
+
       "standardFlowEnabled": false,
       "implicitFlowEnabled": false,
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": false,
       "authorizationServicesEnabled": false,
+
       "redirectUris": [],
       "webOrigins": []
     },
+
     {
       "clientId": "atlasrag-web",
-      "name": "AtlasRAG Web",
+      "name": "AtlasRAG Web BFF",
       "enabled": true,
       "protocol": "openid-connect",
-      "publicClient": true,
+
+      "publicClient": false,
       "bearerOnly": false,
-      "clientAuthenticatorType": "none",
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${ATLAS_KEYCLOAK_WEB_CLIENT_SECRET}",
+
       "rootUrl": "http://localhost:3000",
       "baseUrl": "/",
+
       "redirectUris": [
-        "http://localhost:3000/*"
+        "http://localhost:3000/auth/callback"
       ],
-      "webOrigins": [
-        "http://localhost:3000"
-      ],
+
+      "webOrigins": [],
+
       "standardFlowEnabled": true,
       "implicitFlowEnabled": false,
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": false,
       "authorizationServicesEnabled": false,
+
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+
       "protocolMappers": [
         {
           "name": "AtlasRAG API audience",
@@ -51,8 +65,7 @@
             "included.client.audience": "atlasrag-api",
             "id.token.claim": "false",
             "access.token.claim": "true",
-            "userinfo.token.claim": "false",
-            "introspection.token.claim": "true"
+            "userinfo.token.claim": "false"
           }
         }
       ]

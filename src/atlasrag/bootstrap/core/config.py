@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     DATABASE_ECHO: bool = False
     DEBUG: bool = False
 
-    KEYCLOAK_ISSUER: AnyHttpUrl = "http://localhost:8080/realms/atlas"
+    KEYCLOAK_ISSUER: AnyHttpUrl = "http://localhost:8080/realms/atlasrag"
     KEYCLOAK_AUDIENCE: str = "atlasrag-api"
     KEYCLOAK_ALGORITHMS: tuple[str, ...] = ("RS256",)
     KEYCLOAK_TIMEOUT_SECONDS: float = 5.0

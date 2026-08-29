@@ -8,6 +8,7 @@ services:
       POSTGRES_DB: ${ATLAS_POSTGRES_DB:-atlasrag}
       POSTGRES_USER: ${ATLAS_POSTGRES_USER:-atlas}
       POSTGRES_PASSWORD: ${ATLAS_POSTGRES_PASSWORD:-atlas_dev_password}
+      ATLAS_KEYCLOAK_WEB_CLIENT_SECRET: ${ATLAS_KEYCLOAK_WEB_CLIENT_SECRET:-atlasrag_web_dev_secret}
       ATLAS_KEYCLOAK_DB: ${ATLAS_KEYCLOAK_DB:-keycloak}
       ATLAS_KEYCLOAK_DB_USER: ${ATLAS_KEYCLOAK_DB_USER:-keycloak}
       ATLAS_KEYCLOAK_DB_PASSWORD: ${ATLAS_KEYCLOAK_DB_PASSWORD:-keycloak_dev_password}
@@ -24,17 +25,18 @@ services:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB",
+          "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB && psql -U $$POSTGRES_USER -d $$POSTGRES_DB -tAc \"SELECT 1 FROM pg_database WHERE datname='$$ATLAS_KEYCLOAK_DB'\" | grep -q 1",
         ]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
       start_period: 5s
 
     restart: unless-stopped
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.7.2
+
     command:
       - start-dev
       - --import-realm
@@ -46,9 +48,12 @@ services:
       KC_DB_URL_DATABASE: ${ATLAS_KEYCLOAK_DB:-keycloak}
       KC_DB_USERNAME: ${ATLAS_KEYCLOAK_DB_USER:-keycloak}
       KC_DB_PASSWORD: ${ATLAS_KEYCLOAK_DB_PASSWORD:-keycloak_dev_password}
+
       KC_BOOTSTRAP_ADMIN_USERNAME: ${ATLAS_KEYCLOAK_ADMIN_USERNAME:-admin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${ATLAS_KEYCLOAK_ADMIN_PASSWORD:-admin}
+
       KC_HOSTNAME: "http://localhost:${ATLAS_KEYCLOAK_PORT:-8080}"
+
     ports:
       - "127.0.0.1:${ATLAS_KEYCLOAK_PORT:-8080}:8080"
 

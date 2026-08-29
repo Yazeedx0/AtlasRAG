@@ -61,7 +61,7 @@ Local authentication uses Keycloak. Start the database and Keycloak services wit
 docker compose -f infra/docker-compose.yml up -d postgres keycloak
 ```
 
-Keycloak is available at <http://localhost:8080>. The imported realm is `atlas`, with
+Keycloak is available at <http://localhost:8080>. The imported realm is `atlasrag`, with
 the API client `atlasrag-api`; configuration and admin instructions are documented in
 [`infra/keycloak/README.md`](infra/keycloak/README.md).
 

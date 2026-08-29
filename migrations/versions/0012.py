@@ -124,7 +124,9 @@ def upgrade() -> None:
         ["document_id", "principal_id"],
         unique=False,
         schema="knowledge",
-        postgresql_where=sa.text("revoked_at IS NULL AND permission = 'read'"),
+        postgresql_where=sa.text(
+            "revoked_at IS NULL AND permission IN ('read', 'manage')"
+        ),
     )
     op.create_index(
         "uq_document_acl_active_grant",
@@ -147,7 +149,9 @@ def downgrade() -> None:
         "ix_document_acl_active_read_lookup",
         table_name="document_acl",
         schema="knowledge",
-        postgresql_where=sa.text("revoked_at IS NULL AND permission = 'read'"),
+        postgresql_where=sa.text(
+            "revoked_at IS NULL AND permission IN ('read', 'manage')"
+        ),
     )
     op.drop_table("document_acl", schema="knowledge")
     op.drop_table("documents", schema="knowledge")

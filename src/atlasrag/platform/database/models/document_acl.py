@@ -39,7 +39,9 @@ class DocumentACL(Base):
             "ix_document_acl_active_read_lookup",
             "document_id",
             "principal_id",
-            postgresql_where=text("revoked_at IS NULL AND permission = 'read'"),
+            postgresql_where=text(
+                "revoked_at IS NULL AND permission IN ('read', 'manage')"
+            ),
         ),
         {"schema": "knowledge"},
     )

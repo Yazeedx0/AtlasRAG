@@ -27,7 +27,9 @@ class SqlAlchemyDocumentAccessRepository:
             exists().where(
                 DocumentACL.document_id == document_id,
                 DocumentACL.principal_id.in_(principal_ids),
-                DocumentACL.permission == DocumentPermission.READ,
+                DocumentACL.permission.in_(
+                    (DocumentPermission.READ, DocumentPermission.MANAGE)
+                ),
                 DocumentACL.granted_at <= at,
                 DocumentACL.revoked_at.is_(None),
                 or_(

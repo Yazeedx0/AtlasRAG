@@ -18,6 +18,7 @@ from atlasrag.modules.identity.helpers.errors import (
     GroupMembershipCycle,
     GroupPrincipalRequired,
     GroupSelfMembership,
+    InvalidPrincipalType,
     PrincipalInactive,
     PrincipalNotFound,
     PrincipalRetired,
@@ -123,7 +124,7 @@ class FakeUnitOfWork:
 
 def make_state(
     principal_id: UUID,
-    principal_type: PrincipalType,
+    principal_type: str | None,
     *,
     is_active: bool = True,
     deleted_at: datetime | None = None,
@@ -262,6 +263,7 @@ async def test_add_group_member_validates_target_group(
             PrincipalRetired,
         ),
         (make_state(uuid4(), PrincipalType.ROLE), GroupMemberTypeNotAllowed),
+        (make_state(uuid4(), "usr"), InvalidPrincipalType),
     ],
 )
 async def test_add_group_member_validates_member(

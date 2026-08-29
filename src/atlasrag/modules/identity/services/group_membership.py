@@ -10,6 +10,7 @@ from atlasrag.modules.identity.helpers.errors import (
     GroupMembershipCycle,
     GroupPrincipalRequired,
     GroupSelfMembership,
+    InvalidPrincipalType,
     PrincipalInactive,
     PrincipalNotFound,
     PrincipalRetired,
@@ -89,7 +90,7 @@ class GroupMembershipService:
         try:
             member_type = PrincipalType(principal.type)
         except (TypeError, ValueError) as error:
-            raise GroupMemberTypeNotAllowed(
+            raise InvalidPrincipalType(
                 principal_id=principal.principal_id,
                 principal_type=principal.type,
             ) from error

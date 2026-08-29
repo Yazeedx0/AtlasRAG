@@ -92,6 +92,18 @@ class GroupMemberTypeNotAllowed(IdentityError):
         )
 
 
+class InvalidPrincipalType(IdentityError):
+    """Raised when a persisted principal type cannot be parsed."""
+
+    def __init__(self, *, principal_id: UUID, principal_type: str | None) -> None:
+        self.principal_id = principal_id
+        self.principal_type = principal_type
+        type_description = principal_type or "unknown"
+        super().__init__(
+            f"principal {principal_id} has invalid persisted type {type_description}"
+        )
+
+
 class GroupSelfMembership(IdentityError):
     """Raised when a group is added as a member of itself."""
 

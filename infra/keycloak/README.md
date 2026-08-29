@@ -5,10 +5,11 @@ This directory contains the local development realm configuration for AtlasRAG.
 ## Configuration
 
 - Realm: `atlasrag`
-- API client: `atlasrag-api` (bearer-only)
-- Web client: `atlasrag-web` (public OIDC client)
-- Web redirect URI: `http://localhost:3000/*`
-- Web registration: enabled for local development
+- API client: `atlasrag-api` (resource-server audience; no interactive login flows)
+- Web client: `atlasrag-web` (confidential OIDC BFF client)
+- Web redirect URI: `http://localhost:3000/auth/callback`
+- Web registration: disabled
+- Web client secret: `ATLAS_KEYCLOAK_WEB_CLIENT_SECRET`
 - Keycloak URL: <http://localhost:8080>
 - Realm issuer: <http://localhost:8080/realms/atlasrag>
 - Database: `keycloak` with the dedicated `keycloak` database user

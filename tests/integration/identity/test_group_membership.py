@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from atlasrag.modules.identity.enums import PrincipalType
 from atlasrag.modules.identity.models import Group, GroupMembership, Principal
-from atlasrag.modules.identity.repositories.group_membership_repository import (
+from atlasrag.modules.identity.repositories.group_membership import (
     SqlAlchemyGroupMembershipRepository,
 )
 

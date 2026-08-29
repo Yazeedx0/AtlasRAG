@@ -18,7 +18,7 @@ from apps.api.router import api_router
 from atlasrag.bootstrap.identity import ConfiguredProvisioningPolicy
 from atlasrag.modules.identity.enums import IdentifierType, PrincipalType
 from atlasrag.modules.identity.models import Principal, UserIdentifier, Users
-from atlasrag.modules.identity.repositories.identity_repository import (
+from atlasrag.modules.identity.repositories.identity import (
     SqlAlchemyIdentityRepository,
 )
 from atlasrag.modules.identity.repositories.unit_of_work import (

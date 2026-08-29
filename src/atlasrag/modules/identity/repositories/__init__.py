@@ -1,10 +1,13 @@
-from atlasrag.modules.identity.repositories.group_membership_repository import (
+from atlasrag.modules.identity.repositories.effective_principal import (
+    SqlAlchemyEffectivePrincipalRepository,
+)
+from atlasrag.modules.identity.repositories.group_membership import (
     SqlAlchemyGroupMembershipRepository,
 )
-from atlasrag.modules.identity.repositories.identity_repository import (
+from atlasrag.modules.identity.repositories.identity import (
     SqlAlchemyIdentityRepository,
 )
-from atlasrag.modules.identity.repositories.principal_repository import (
+from atlasrag.modules.identity.repositories.principal import (
     SqlAlchemyPrincipalRepository,
 )
 from atlasrag.modules.identity.repositories.unit_of_work import (
@@ -13,6 +16,7 @@ from atlasrag.modules.identity.repositories.unit_of_work import (
 )
 
 __all__ = [
+    "SqlAlchemyEffectivePrincipalRepository",
     "SqlAlchemyIdentityRepository",
     "SqlAlchemyGroupMembershipRepository",
     "SqlAlchemyPrincipalRepository",

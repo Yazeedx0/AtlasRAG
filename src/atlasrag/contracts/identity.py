@@ -88,6 +88,14 @@ class GroupMembershipRepository(Protocol):
         ...
 
 
+class EffectivePrincipalRepository(Protocol):
+    async def find_effective_principal_ids(
+        self,
+        user_principal_id: UUID,
+    ) -> frozenset[UUID]:
+        ...
+
+
 class UserIdentifierRepository(Protocol):
     async def close_active_for_user(
         self,

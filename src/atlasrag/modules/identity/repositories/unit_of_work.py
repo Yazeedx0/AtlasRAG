@@ -8,13 +8,13 @@ from atlasrag.contracts.identity import (
     IdentityRepository,
     PrincipalRepository,
 )
-from atlasrag.modules.identity.repositories.group_membership_repository import (
+from atlasrag.modules.identity.repositories.group_membership import (
     SqlAlchemyGroupMembershipRepository,
 )
-from atlasrag.modules.identity.repositories.identity_repository import (
+from atlasrag.modules.identity.repositories.identity import (
     SqlAlchemyIdentityRepository,
 )
-from atlasrag.modules.identity.repositories.principal_repository import (
+from atlasrag.modules.identity.repositories.principal import (
     SqlAlchemyPrincipalRepository,
 )
 

@@ -6,6 +6,10 @@ from uuid import UUID
 
 from atlasrag.contracts.authentication import AuthenticatedIdentity
 from atlasrag.contracts.identity_types import LocalUserIdentity, PrincipalState
+from atlasrag.contracts.permission_authorization import (
+    PermissionRepository,
+    SuperadminRepository,
+)
 
 
 class IdentifierType(Enum):
@@ -150,6 +154,27 @@ class GroupMembershipUnitOfWork(IdentityUnitOfWork, Protocol):
     memberships: GroupMembershipRepository
 
     async def __aenter__(self) -> "GroupMembershipUnitOfWork":
+        ...
+
+
+class ProtectedIdentityUnitOfWork(IdentityUnitOfWork, Protocol):
+    superadmins: SuperadminRepository
+
+    async def __aenter__(self) -> "ProtectedIdentityUnitOfWork":
+        ...
+
+
+class PermissionManagementUnitOfWork(ProtectedIdentityUnitOfWork, Protocol):
+    permissions: PermissionRepository
+
+    async def __aenter__(self) -> "PermissionManagementUnitOfWork":
+        ...
+
+
+class RoleAssignmentUnitOfWork(ProtectedIdentityUnitOfWork, Protocol):
+    role_assignments: RoleAssignmentRepository
+
+    async def __aenter__(self) -> "RoleAssignmentUnitOfWork":
         ...
 
 

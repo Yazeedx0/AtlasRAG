@@ -6,6 +6,10 @@ from uuid import UUID, uuid4
 import pytest
 
 from atlasrag.contracts.identity_types import PrincipalState
+from atlasrag.contracts.permission_errors import (
+    LastSuperadminViolation,
+    ProtectedSuperadminRole,
+)
 from atlasrag.modules.identity.helpers.errors import PrincipalNotFound, PrincipalRetired
 from atlasrag.modules.identity.services.principal_lifecycle import PrincipalLifecycle
 
@@ -47,9 +51,39 @@ class FakePrincipalRepository:
             raise self._mutation_error
 
 
+class FakeSuperadminRepository:
+    def __init__(
+        self,
+        *,
+        role_id: UUID,
+        assigned_user_ids: frozenset[UUID],
+        active_count: int,
+    ) -> None:
+        self.role_id = role_id
+        self.assigned_user_ids = assigned_user_ids
+        self.active_count = active_count
+
+    async def find_superadmin_role_id(self) -> UUID | None:
+        return self.role_id
+
+    async def lock_superadmin_role(self) -> UUID | None:
+        return self.role_id
+
+    async def user_has_superadmin_role(self, user_principal_id: UUID) -> bool:
+        return user_principal_id in self.assigned_user_ids
+
+    async def count_active_superadmins(self, role_principal_id: UUID) -> int:
+        return self.active_count
+
+
 class FakeUnitOfWork:
-    def __init__(self, repository: FakePrincipalRepository) -> None:
+    def __init__(
+        self,
+        repository: FakePrincipalRepository,
+        superadmins: FakeSuperadminRepository,
+    ) -> None:
         self.principals = repository
+        self.superadmins = superadmins
         self.committed = False
         self.entered = False
         self.exited = False
@@ -78,9 +112,17 @@ def make_lifecycle(
     state: PrincipalState | None,
     *,
     mutation_error: BaseException | None = None,
+    superadmin_role_id: UUID | None = None,
+    assigned_user_ids: frozenset[UUID] = frozenset(),
+    active_superadmin_count: int = 1,
 ) -> tuple[PrincipalLifecycle, FakePrincipalRepository, FakeUnitOfWork]:
     repository = FakePrincipalRepository(state, mutation_error=mutation_error)
-    uow = FakeUnitOfWork(repository)
+    superadmins = FakeSuperadminRepository(
+        role_id=superadmin_role_id or uuid4(),
+        assigned_user_ids=assigned_user_ids,
+        active_count=active_superadmin_count,
+    )
+    uow = FakeUnitOfWork(repository, superadmins)
     lifecycle = PrincipalLifecycle(lambda: uow)  # type: ignore[arg-type]
     return lifecycle, repository, uow
 
@@ -256,3 +298,54 @@ async def test_lifecycle_rejects_retired_principal(operation: LifecycleOperation
     assert uow.committed is False
     assert uow.rolled_back is True
     assert uow.exit_exception_type is PrincipalRetired
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "operation",
+    [
+        PrincipalLifecycle.deactivate_principal,
+        PrincipalLifecycle.retire_principal,
+    ],
+)
+async def test_lifecycle_protects_superadmin_role(operation: LifecycleOperation) -> None:
+    role_id = uuid4()
+    lifecycle, repository, uow = make_lifecycle(
+        make_state(role_id, is_active=True),
+        superadmin_role_id=role_id,
+    )
+
+    with pytest.raises(ProtectedSuperadminRole):
+        await operation(lifecycle, role_id)
+
+    assert repository.deactivate_calls == []
+    assert repository.retire_calls == []
+    assert uow.committed is False
+    assert uow.rolled_back is True
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "operation",
+    [
+        PrincipalLifecycle.deactivate_principal,
+        PrincipalLifecycle.retire_principal,
+    ],
+)
+async def test_lifecycle_protects_last_active_superadmin_user(
+    operation: LifecycleOperation,
+) -> None:
+    user_id = uuid4()
+    lifecycle, repository, uow = make_lifecycle(
+        make_state(user_id, is_active=True),
+        assigned_user_ids=frozenset({user_id}),
+        active_superadmin_count=1,
+    )
+
+    with pytest.raises(LastSuperadminViolation):
+        await operation(lifecycle, user_id)
+
+    assert repository.deactivate_calls == []
+    assert repository.retire_calls == []
+    assert uow.committed is False
+    assert uow.rolled_back is True

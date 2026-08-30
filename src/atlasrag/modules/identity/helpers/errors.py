@@ -17,6 +17,22 @@ from atlasrag.contracts.identity_errors import (
     PrincipalInactive,
     PrincipalNotFound,
     PrincipalRetired,
+    RoleAssignmentConflict,
+    RoleAssignmentNotFound,
+    RoleAssignmentRoleNotFound,
+    RoleAssignmentUserNotFound,
+)
+from atlasrag.contracts.permission_errors import (
+    LastSuperadminViolation,
+    PermissionDenied,
+    PermissionEngineError,
+    PermissionGrantConflict,
+    PermissionGrantNotFound,
+    PermissionNotFound,
+    PermissionTargetInactive,
+    PermissionTargetNotFound,
+    PermissionTargetRetired,
+    ProtectedSuperadminRole,
 )
 
 __all__ = [
@@ -38,4 +54,18 @@ __all__ = [
     "PrincipalInactive",
     "PrincipalNotFound",
     "PrincipalRetired",
+    "RoleAssignmentConflict",
+    "RoleAssignmentNotFound",
+    "RoleAssignmentRoleNotFound",
+    "RoleAssignmentUserNotFound",
+    "LastSuperadminViolation",
+    "PermissionDenied",
+    "PermissionEngineError",
+    "PermissionGrantConflict",
+    "PermissionGrantNotFound",
+    "PermissionNotFound",
+    "PermissionTargetInactive",
+    "PermissionTargetNotFound",
+    "PermissionTargetRetired",
+    "ProtectedSuperadminRole",
 ]

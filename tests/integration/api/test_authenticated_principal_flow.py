@@ -1,7 +1,7 @@
 from collections.abc import AsyncIterator, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import httpx
 import jwt
@@ -17,7 +17,8 @@ from apps.api.dependencies.identity import get_identity_resolver
 from apps.api.router import api_router
 from atlasrag.bootstrap.identity import ConfiguredProvisioningPolicy
 from atlasrag.modules.identity.enums import IdentifierType, PrincipalType
-from atlasrag.modules.identity.models import Principal, UserIdentifier, Users
+from atlasrag.modules.identity.builtin_roles import SUPERADMIN_ROLE_KEY
+from atlasrag.modules.identity.models import Principal, Role, UserIdentifier, Users
 from atlasrag.modules.identity.repositories.identity import (
     SqlAlchemyIdentityRepository,
 )
@@ -307,6 +308,23 @@ async def test_disabled_principal_returns_403_after_successful_authentication(
     assert initial_response.status_code == 200
     principal_id = UUID(initial_response.json()["principal_id"])
 
+    async with auth_api.session_factory() as session:
+        superadmin_role_id = uuid4()
+        await session.execute(
+            Principal.__table__.insert().values(
+                id=superadmin_role_id,
+                type=PrincipalType.ROLE,
+            )
+        )
+        await session.execute(
+            Role.__table__.insert().values(
+                principal_id=superadmin_role_id,
+                role_key=SUPERADMIN_ROLE_KEY,
+                name="Superadmin",
+            )
+        )
+        await session.commit()
+
     lifecycle = PrincipalLifecycle(
         make_identity_unit_of_work_factory(auth_api.session_factory),
     )
@@ -321,7 +339,7 @@ async def test_disabled_principal_returns_403_after_successful_authentication(
     assert response.json() == {
         "detail": "Authenticated identity has no usable local access",
     }
-    assert await count_rows(engine, Principal) == 1
+    assert await count_rows(engine, Principal) == 2
 
 
 @pytest.mark.integration

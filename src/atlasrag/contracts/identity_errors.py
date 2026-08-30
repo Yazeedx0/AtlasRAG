@@ -133,3 +133,45 @@ class GroupMembershipAlreadyExists(IdentityError):
         super().__init__(
             f"active membership already exists: group {group_id}, member {member_id}"
         )
+
+
+class RoleAssignmentUserNotFound(IdentityError):
+    def __init__(self, *, user_principal_id: UUID) -> None:
+        self.user_principal_id = user_principal_id
+        super().__init__(f"role assignment user principal {user_principal_id} not found")
+
+
+class RoleAssignmentRoleNotFound(IdentityError):
+    def __init__(self, *, role_principal_id: UUID) -> None:
+        self.role_principal_id = role_principal_id
+        super().__init__(f"role assignment role principal {role_principal_id} not found")
+
+
+class RoleAssignmentConflict(IdentityError):
+    def __init__(
+        self,
+        *,
+        user_principal_id: UUID,
+        role_principal_id: UUID,
+    ) -> None:
+        self.user_principal_id = user_principal_id
+        self.role_principal_id = role_principal_id
+        super().__init__(
+            f"active role assignment already exists for user {user_principal_id} "
+            f"and role {role_principal_id}"
+        )
+
+
+class RoleAssignmentNotFound(IdentityError):
+    def __init__(
+        self,
+        *,
+        user_principal_id: UUID,
+        role_principal_id: UUID,
+    ) -> None:
+        self.user_principal_id = user_principal_id
+        self.role_principal_id = role_principal_id
+        super().__init__(
+            f"no active role assignment exists for user {user_principal_id} "
+            f"and role {role_principal_id}"
+        )

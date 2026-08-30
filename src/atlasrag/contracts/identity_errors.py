@@ -135,6 +135,17 @@ class GroupMembershipAlreadyExists(IdentityError):
         )
 
 
+class GroupMembershipNotFound(IdentityError):
+    """Raised when no active membership exists for the group/member pair."""
+
+    def __init__(self, *, group_id: UUID, member_id: UUID) -> None:
+        self.group_id = group_id
+        self.member_id = member_id
+        super().__init__(
+            f"no active membership exists: group {group_id}, member {member_id}"
+        )
+
+
 class RoleAssignmentUserNotFound(IdentityError):
     def __init__(self, *, user_principal_id: UUID) -> None:
         self.user_principal_id = user_principal_id

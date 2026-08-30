@@ -7,6 +7,7 @@ from uuid import UUID
 from atlasrag.contracts.authentication import AuthenticatedIdentity
 from atlasrag.contracts.identity_types import (
     AssignedRole,
+    DirectGroupMember,
     LocalUserIdentity,
     PrincipalState,
 )
@@ -53,6 +54,13 @@ class PrincipalRepository(Protocol):
 
 
 class GroupMembershipRepository(Protocol):
+    async def list_active_members(
+        self,
+        *,
+        group_principal_id: UUID,
+    ) -> tuple[DirectGroupMember, ...]:
+        ...
+
     async def has_active_membership(
         self,
         *,
@@ -70,6 +78,16 @@ class GroupMembershipRepository(Protocol):
         added_by_principal_id: UUID,
         added_at: datetime,
     ) -> None:
+        ...
+
+    async def close_active_membership(
+        self,
+        *,
+        group_principal_id: UUID,
+        member_principal_id: UUID,
+        removed_by_principal_id: UUID,
+        removed_at: datetime,
+    ) -> bool:
         ...
 
     async def would_create_cycle(

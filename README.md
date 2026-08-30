@@ -53,20 +53,31 @@ make ingest
 make eval                     # writes a report to evals/reports/
 ```
 
-To seed a local development user in Keycloak and assign the local `superadmin` role:
+### Seed the demo company and get a CLI token
+
+Apply the migrations, then seed the Atlas Corp demo company in Keycloak and AtlasRAG:
 
 ```bash
+make migrate
 export ATLAS_SEED_USER_PASSWORD='use-a-local-development-password'
-uv run python -m scripts.seed_dev_data
+make seed-dev
 ```
 
-The script is safe to rerun: it reuses an existing Keycloak user and local identity. Use
-`--reset-password` only when you explicitly want to reset the existing user's password.
-Run `make migrate` first because the migration creates the built-in permissions and
-`superadmin` role.
+The seed creates the configured admin user plus seven demo users, six roles, six groups,
+role assignments, nested group memberships, six sample documents, and document ACLs.
+All seeded Keycloak users use the password supplied through `ATLAS_SEED_USER_PASSWORD`.
+The script is safe to rerun: it reuses existing Keycloak users and local identities and
+reconciles the seeded records without deleting data. Use `--reset-password` only when you
+explicitly want to reset the existing demo users' password.
+The Keycloak admin password must be configured in `.env` or supplied with
+`ATLAS_KEYCLOAK_ADMIN_PASSWORD`.
+
+With the default configuration, the seeded usernames are `atlas-admin`,
+`alice.engineer`, `bob.engineer`, `carol.hr`, `diana.hr`, `eric.finance`,
+`fatima.finance`, and `george.operations`.
 
 The seed also ensures the development-only `atlasrag-cli` client. Get a token for Postman
-with:
+or other local API clients with:
 
 ```bash
 uv run python -m scripts.get_dev_token
@@ -75,6 +86,16 @@ uv run python -m scripts.get_dev_token
 Copy the printed value into Postman's Bearer Token authorization. This client uses the
 password grant for local development only; the `atlasrag-web` client remains an
 authorization-code client.
+
+To remove only the seeded demo company from the database and Keycloak while preserving
+the schema and migration-owned permissions:
+
+```bash
+make clean-seed
+```
+
+This removes the seeded demo users, roles, groups, documents, memberships, assignments,
+ACLs, and the development-only `atlasrag-cli` client. It does not delete Docker volumes.
 
 ### Authentication
 

@@ -60,6 +60,14 @@ revision: ## Autogenerate a migration: make revision m="add chunks"
 ingest: ## Ingest the corpus (idempotent)
 	uv run python scripts/ingest.py
 
+.PHONY: seed-dev
+seed-dev: ## Seed the development company dataset
+	uv run python -m scripts.seed_dev_data
+
+.PHONY: clean-seed
+clean-seed: ## Remove the development company seed from the database and Keycloak
+	uv run python -m scripts.clean_dev_data
+
 .PHONY: eval
 eval: ## Run the golden set and write a report to evals/reports/
 	uv run python scripts/run_eval.py

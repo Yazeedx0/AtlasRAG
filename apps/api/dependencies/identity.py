@@ -15,6 +15,7 @@ from atlasrag.modules.identity.repositories.identity import (
 from atlasrag.modules.identity.repositories.unit_of_work import (
     make_identity_unit_of_work_factory,
 )
+from atlasrag.modules.identity.services.group_membership import GroupMembershipService
 from atlasrag.modules.identity.services.identity_resolver import IdentityResolver
 from atlasrag.modules.identity.services.principal_lifecycle import PrincipalLifecycle
 from atlasrag.modules.identity.services.role_assignment import RoleAssignmentService
@@ -40,6 +41,12 @@ def get_principal_lifecycle() -> PrincipalLifecycle:
 
 def get_role_assignment_service() -> RoleAssignmentService:
     return RoleAssignmentService(
+        make_identity_unit_of_work_factory(async_session_factory),
+    )
+
+
+def get_group_membership_service() -> GroupMembershipService:
+    return GroupMembershipService(
         make_identity_unit_of_work_factory(async_session_factory),
     )
 

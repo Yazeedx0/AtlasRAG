@@ -28,4 +28,18 @@ class AssignedRole:
     assigned_by_principal_id: UUID | None
 
 
-__all__ = ["AssignedRole", "LocalUserIdentity", "PrincipalState"]
+@dataclass(frozen=True, slots=True)
+class DirectGroupMember:
+    membership_id: UUID
+    member_principal_id: UUID
+    member_type: str
+    added_at: datetime
+    added_by_principal_id: UUID | None
+
+
+__all__ = [
+    "AssignedRole",
+    "DirectGroupMember",
+    "LocalUserIdentity",
+    "PrincipalState",
+]

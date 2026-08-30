@@ -1,7 +1,8 @@
 from atlasrag.contracts.identity_errors import (
     GroupCycleDetected,
-    GroupMembershipAlreadyExists,
     GroupMemberTypeNotAllowed,
+    GroupMembershipAlreadyExists,
+    GroupMembershipNotFound,
     GroupPrincipalRequired,
     GroupSelfMembership,
     IdentityAlreadyProvisioned,
@@ -39,6 +40,7 @@ __all__ = [
     "GroupCycleDetected",
     "GroupMemberTypeNotAllowed",
     "GroupMembershipAlreadyExists",
+    "GroupMembershipNotFound",
     "GroupPrincipalRequired",
     "GroupSelfMembership",
     "IdentityAlreadyProvisioned",

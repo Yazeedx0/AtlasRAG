@@ -1,14 +1,15 @@
 from collections.abc import Callable
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from atlasrag.contracts.identity import GroupMembershipUnitOfWork
-from atlasrag.contracts.identity_types import PrincipalState
+from atlasrag.contracts.identity_types import DirectGroupMember, PrincipalState
 from atlasrag.modules.identity.enums import PrincipalType
 from atlasrag.modules.identity.helpers.errors import (
     GroupCycleDetected,
-    GroupMembershipAlreadyExists,
     GroupMemberTypeNotAllowed,
+    GroupMembershipAlreadyExists,
+    GroupMembershipNotFound,
     GroupPrincipalRequired,
     GroupSelfMembership,
     InvalidPrincipalType,
@@ -19,15 +20,33 @@ from atlasrag.modules.identity.helpers.errors import (
 
 
 class GroupMembershipService:
-    def __init__(self, uow_factory: Callable[[], GroupMembershipUnitOfWork]) -> None:
+    def __init__(
+        self,
+        uow_factory: Callable[[], GroupMembershipUnitOfWork],
+        *,
+        clock: Callable[[], datetime] | None = None,
+    ) -> None:
         self._uow_factory = uow_factory
+        self._clock = clock or (lambda: datetime.now(UTC))
+
+    async def list_group_members(
+        self,
+        *,
+        group_id: UUID,
+    ) -> tuple[DirectGroupMember, ...]:
+        async with self._uow_factory() as uow:
+            group = await self._get_principal(uow, group_id, role="group")
+            self._ensure_group(group)
+            return await uow.memberships.list_active_members(
+                group_principal_id=group_id,
+            )
 
     async def add_group_member(
         self,
         group_id: UUID,
         member_id: UUID,
         actor_id: UUID,
-        added_at: datetime,
+        added_at: datetime | None = None,
     ) -> None:
         if group_id == member_id:
             raise GroupSelfMembership(group_id=group_id, member_id=member_id)
@@ -58,8 +77,33 @@ class GroupMembershipService:
                 member_principal_id=member_id,
                 member_type=member_type.value,
                 added_by_principal_id=actor_id,
-                added_at=added_at,
+                added_at=added_at or self._clock(),
             )
+            await uow.commit()
+
+    async def remove_group_member(
+        self,
+        *,
+        group_id: UUID,
+        member_id: UUID,
+        actor_id: UUID,
+    ) -> None:
+        async with self._uow_factory() as uow:
+            group = await self._get_principal(uow, group_id, role="group")
+            self._ensure_group(group)
+
+            member = await self._get_principal(uow, member_id, role="member")
+            self._get_allowed_member_type(member)
+
+            removed = await uow.memberships.close_active_membership(
+                group_principal_id=group_id,
+                member_principal_id=member_id,
+                removed_by_principal_id=actor_id,
+                removed_at=self._clock(),
+            )
+            if not removed:
+                raise GroupMembershipNotFound(group_id=group_id, member_id=member_id)
+
             await uow.commit()
 
     @staticmethod

@@ -2,6 +2,13 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
 from atlasrag.contracts.identity_errors import (
+    GroupCycleDetected,
+    GroupMemberTypeNotAllowed,
+    GroupMembershipAlreadyExists,
+    GroupMembershipNotFound,
+    GroupPrincipalRequired,
+    GroupSelfMembership,
+    InvalidPrincipalType,
     PrincipalInactive,
     PrincipalNotFound,
     PrincipalRetired,
@@ -38,6 +45,7 @@ async def handle_principal_conflict(
 
 def register_exception_handlers(application: FastAPI) -> None:
     for error_type in (
+        GroupMembershipNotFound,
         PrincipalNotFound,
         RoleAssignmentNotFound,
         RoleAssignmentRoleNotFound,
@@ -45,6 +53,12 @@ def register_exception_handlers(application: FastAPI) -> None:
     ):
         application.add_exception_handler(error_type, handle_principal_not_found)
     for error_type in (
+        GroupCycleDetected,
+        GroupMemberTypeNotAllowed,
+        GroupMembershipAlreadyExists,
+        GroupPrincipalRequired,
+        GroupSelfMembership,
+        InvalidPrincipalType,
         LastSuperadminViolation,
         PrincipalInactive,
         PrincipalRetired,

@@ -44,6 +44,10 @@ class IdentityProvisioningConflict(IdentityProvisioningError):
     resolved."""
 
 
+class TokenVerificationError(Exception):
+    """Raised when an authentication token cannot be trusted."""
+
+
 class PrincipalNotFound(IdentityError):
     """Raised when a principal does not exist."""
 
@@ -186,3 +190,4 @@ class RoleAssignmentNotFound(IdentityError):
             f"no active role assignment exists for user {user_principal_id} "
             f"and role {role_principal_id}"
         )
+

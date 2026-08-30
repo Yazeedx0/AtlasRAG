@@ -13,7 +13,7 @@ from atlasrag.contracts.documents import (
     DocumentPatch,
     DocumentState,
 )
-from atlasrag.contracts.document_errors import DocumentCanonicalKeyConflict
+from atlasrag.contracts.error.document_errors import DocumentCanonicalKeyConflict
 from atlasrag.modules.knowledge.models import Document
 from atlasrag.platform.database.integrity import is_integrity_error_for_constraint
 

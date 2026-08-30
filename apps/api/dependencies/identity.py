@@ -8,7 +8,7 @@ from apps.api.dependencies.authentication import get_authenticated_identity
 from atlasrag.bootstrap.core.config import get_settings
 from atlasrag.bootstrap.identity import ConfiguredProvisioningPolicy
 from atlasrag.contracts.authentication import AuthenticatedIdentity
-from atlasrag.contracts.identity_errors import IdentityResolutionError
+from atlasrag.contracts.error.identity_errors import IdentityResolutionError
 from atlasrag.modules.identity.repositories.identity import (
     IdentityRepository,
 )

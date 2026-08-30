@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from atlasrag.contracts.authentication import AuthenticatedIdentity
-from atlasrag.contracts.identity_types import LocalUserIdentity
+from atlasrag.contracts.types.identity_types import LocalUserIdentity
 from atlasrag.modules.identity.helpers.errors import (
     IdentityAlreadyProvisioned,
     IdentityProvisioningConflict,

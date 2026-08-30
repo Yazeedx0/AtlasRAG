@@ -12,11 +12,11 @@ from apps.api.dependencies.permissions import get_permission_authorization_servi
 from apps.api.router import api_router
 from apps.api.utilities.exception_handlers import register_exception_handlers
 
-from atlasrag.contracts.identity_errors import (
+from atlasrag.contracts.error.identity_errors import (
     PrincipalNotFound,
     PrincipalRetired,
 )
-from atlasrag.contracts.permission_errors import (
+from atlasrag.contracts.error.permission_errors import (
     LastSuperadminViolation,
     PermissionDenied,
     ProtectedSuperadminRole,

@@ -4,7 +4,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from atlasrag.contracts.permission_errors import PermissionDenied
+from atlasrag.contracts.error.permission_errors import PermissionDenied
 from atlasrag.contracts.permissions import Permission
 from atlasrag.modules.identity.services.permission_authorization import (
     PermissionAuthorizationService,

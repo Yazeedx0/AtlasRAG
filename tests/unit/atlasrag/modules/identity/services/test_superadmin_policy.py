@@ -2,7 +2,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from atlasrag.contracts.permission_errors import (
+from atlasrag.contracts.error.permission_errors import (
     LastSuperadminViolation,
     ProtectedSuperadminRole,
 )

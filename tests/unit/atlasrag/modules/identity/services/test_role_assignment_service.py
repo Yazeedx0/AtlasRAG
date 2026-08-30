@@ -4,8 +4,8 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from atlasrag.contracts.identity_errors import RoleAssignmentNotFound
-from atlasrag.contracts.permission_errors import LastSuperadminViolation
+from atlasrag.contracts.error.identity_errors import RoleAssignmentNotFound
+from atlasrag.contracts.error.permission_errors import LastSuperadminViolation
 from atlasrag.modules.identity.services.role_assignment import RoleAssignmentService
 
 _NOW = datetime(2026, 8, 30, tzinfo=UTC)

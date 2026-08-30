@@ -1,7 +1,11 @@
 from datetime import datetime
 from uuid import UUID
 
-from atlasrag.contracts.authorization_types import DocumentPermission, DocumentVersionStatus
+from atlasrag.contracts.types.authorization_types import (
+    DocumentArtifactStatus,
+    DocumentPermission,
+    DocumentVersionStatus,
+)
 
 
 class DocumentError(Exception):
@@ -115,11 +119,70 @@ class DocumentVersionDocumentNotFound(DocumentError):
         super().__init__(f"document {document_id} not found")
 
 
+class DocumentArtifactNotFound(DocumentError):
+    def __init__(self, *, document_version_id: UUID, artifact_id: UUID) -> None:
+        self.document_version_id = document_version_id
+        self.artifact_id = artifact_id
+        super().__init__(
+            f"document artifact {artifact_id} not found for document version {document_version_id}"
+        )
+
+
+class DocumentArtifactConflict(DocumentError):
+    def __init__(self, *, document_version_id: UUID, artifact_key: str) -> None:
+        self.document_version_id = document_version_id
+        self.artifact_key = artifact_key
+        super().__init__(
+            f"artifact key {artifact_key!r} already exists for document version {document_version_id}"
+        )
+
+
+class DocumentArtifactStorageLocationConflict(DocumentError):
+    def __init__(self, *, storage_provider: str, storage_key: str) -> None:
+        self.storage_provider = storage_provider
+        self.storage_key = storage_key
+        super().__init__(
+            f"storage location {storage_provider}:{storage_key} is already used by another artifact"
+        )
+
+
+class DocumentArtifactVersionNotDraft(DocumentError):
+    def __init__(self, *, document_version_id: UUID, status: DocumentVersionStatus) -> None:
+        self.document_version_id = document_version_id
+        self.status = status
+        super().__init__(
+            f"document version {document_version_id} is {status.value}; "
+            "artifacts can only be added to a draft version"
+        )
+
+
+class DocumentArtifactInvalidTransition(DocumentError):
+    def __init__(
+        self,
+        *,
+        artifact_id: UUID,
+        current_status: DocumentArtifactStatus,
+        target_status: DocumentArtifactStatus,
+    ) -> None:
+        self.artifact_id = artifact_id
+        self.current_status = current_status
+        self.target_status = target_status
+        super().__init__(
+            f"document artifact {artifact_id} cannot transition from "
+            f"{current_status.value} to {target_status.value}"
+        )
+
+
 __all__ = [
     "DocumentAclExpirationInvalid",
     "DocumentAclGrantConflict",
     "DocumentAclGrantNotFound",
     "DocumentAclPrincipalNotFound",
+    "DocumentArtifactConflict",
+    "DocumentArtifactInvalidTransition",
+    "DocumentArtifactNotFound",
+    "DocumentArtifactStorageLocationConflict",
+    "DocumentArtifactVersionNotDraft",
     "DocumentCanonicalKeyConflict",
     "DocumentError",
     "DocumentNotFound",

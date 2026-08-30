@@ -13,4 +13,11 @@ class DocumentVersionStatus(Enum):
     ARCHIVED = "archived"
 
 
-__all__ = ["DocumentPermission", "DocumentVersionStatus"]
+class DocumentArtifactStatus(Enum):
+    AVAILABLE = "available"
+    MISSING = "missing"
+    RETIRED = "retired"
+    DELETED = "deleted"
+
+
+__all__ = ["DocumentArtifactStatus", "DocumentPermission", "DocumentVersionStatus"]

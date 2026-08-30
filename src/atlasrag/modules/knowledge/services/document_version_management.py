@@ -2,8 +2,8 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from atlasrag.contracts.authorization_types import DocumentVersionStatus
-from atlasrag.contracts.document_errors import (
+from atlasrag.contracts.types.authorization_types import DocumentVersionStatus
+from atlasrag.contracts.error.document_errors import (
     DocumentVersionDocumentNotFound,
     DocumentVersionInvalidEffectiveRange,
     DocumentVersionInvalidTransition,

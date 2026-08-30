@@ -1,20 +1,6 @@
-from dataclasses import dataclass
 from typing import Protocol
-
-
-@dataclass(frozen=True, slots=True)
-
-class AuthenticatedIdentity: 
-    issuer: str 
-    subject: str 
-    email: str | None = None 
-    email_verified: bool | None = None 
-    username: str | None = None 
-    display_name: str | None = None 
-
-class TokenVerificationError(Exception):
-    """Raised when an authentication token cannot be trusted."""
-
+from atlasrag.contracts.types.authentication_types import AuthenticatedIdentity
+from atlasrag.contracts.error.identity_errors import TokenVerificationError
 
 class TokenVerifier(Protocol):
     async def verify(self, token: str) -> AuthenticatedIdentity:

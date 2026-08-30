@@ -1,111 +1,25 @@
-from dataclasses import dataclass
 from datetime import datetime
-from enum import StrEnum
 from types import TracebackType
 from typing import Protocol
 from uuid import UUID
 
-from atlasrag.contracts.authorization_types import DocumentPermission, DocumentVersionStatus
 from atlasrag.contracts.identity import PrincipalRepository
-
-
-class DocumentField(StrEnum):
-    TITLE = "title"
-    DESCRIPTION = "description"
-    DOCUMENT_TYPE = "document_type"
-    DEPARTMENT = "department"
-    DEFAULT_LANGUAGE_CODE = "default_language_code"
-    METADATA = "metadata"
-
-
-@dataclass(frozen=True, slots=True)
-class DocumentState:
-    document_id: UUID
-    created_by_principal_id: UUID | None
-    canonical_key: str
-    title: str
-    description: str | None
-    document_type: str | None
-    department: str | None
-    default_language_code: str | None
-    metadata: dict[str, object]
-    created_at: datetime
-    updated_at: datetime
-    deleted_at: datetime | None
-
-
-@dataclass(frozen=True, slots=True)
-class CreateDocument:
-    document_id: UUID
-    created_by_principal_id: UUID
-    canonical_key: str
-    title: str
-    description: str | None
-    document_type: str | None
-    department: str | None
-    default_language_code: str | None
-    metadata: dict[str, object]
-    created_at: datetime
-    updated_at: datetime
-
-
-@dataclass(frozen=True, slots=True)
-class DocumentPatch:
-    fields: frozenset[DocumentField]
-    title: str | None
-    description: str | None
-    document_type: str | None
-    department: str | None
-    default_language_code: str | None
-    metadata: dict[str, object] | None
-
-
-@dataclass(frozen=True, slots=True)
-class DocumentAclGrantState:
-    grant_id: UUID
-    document_id: UUID
-    principal_id: UUID
-    permission: DocumentPermission
-    granted_at: datetime
-    granted_by_principal_id: UUID | None
-    expires_at: datetime | None
-    revoked_at: datetime | None
-    revoked_by_principal_id: UUID | None
-
-
-@dataclass(frozen=True, slots=True)
-class CreateDocumentAclGrant:
-    document_id: UUID
-    principal_id: UUID
-    permission: DocumentPermission
-    granted_at: datetime
-    granted_by_principal_id: UUID
-    expires_at: datetime | None
-
-
-@dataclass(frozen=True, slots=True)
-class DocumentVersionState:
-    version_id: UUID
-    document_id: UUID
-    version_label: str
-    effective_from: datetime | None
-    effective_to: datetime | None
-    published_at: datetime | None
-    status: DocumentVersionStatus
-    created_by_principal_id: UUID | None
-    metadata: dict[str, object]
-    created_at: datetime
-    updated_at: datetime
-
-
-@dataclass(frozen=True, slots=True)
-class CreateDocumentVersion:
-    version_id: UUID
-    document_id: UUID
-    version_label: str
-    created_by_principal_id: UUID | None
-    metadata: dict[str, object]
-    created_at: datetime
+from atlasrag.contracts.types.authorization_types import (
+    DocumentArtifactStatus,
+    DocumentPermission,
+)
+from atlasrag.contracts.types.document_types import (
+    CreateDocument,
+    CreateDocumentAclGrant,
+    CreateDocumentArtifact,
+    CreateDocumentVersion,
+    DocumentAclGrantState,
+    DocumentArtifactState,
+    DocumentField,
+    DocumentPatch,
+    DocumentState,
+    DocumentVersionState,
+)
 
 
 class DocumentRepository(Protocol):
@@ -263,10 +177,52 @@ class DocumentVersionRepository(Protocol):
         ...
 
 
+class DocumentArtifactRepository(Protocol):
+    async def find_by_id(
+        self,
+        *,
+        document_version_id: UUID,
+        artifact_id: UUID,
+        lock: bool,
+    ) -> DocumentArtifactState | None:
+        ...
+
+    async def find_by_version_and_key(
+        self,
+        *,
+        document_version_id: UUID,
+        artifact_key: str,
+    ) -> DocumentArtifactState | None:
+        ...
+
+    async def list_for_version(
+        self,
+        *,
+        document_version_id: UUID,
+    ) -> tuple[DocumentArtifactState, ...]:
+        ...
+
+    async def create(self, *, artifact: CreateDocumentArtifact) -> DocumentArtifactState:
+        ...
+
+    async def set_status(
+        self,
+        *,
+        document_version_id: UUID,
+        artifact_id: UUID,
+        status: DocumentArtifactStatus,
+        updated_at: datetime,
+        retired_at: datetime | None,
+        deleted_at: datetime | None,
+    ) -> DocumentArtifactState | None:
+        ...
+
+
 class KnowledgeUnitOfWork(Protocol):
     documents: DocumentRepository
     acl: DocumentAclRepository
     document_versions: DocumentVersionRepository
+    document_artifacts: DocumentArtifactRepository
     principals: PrincipalRepository
 
     async def __aenter__(self) -> "KnowledgeUnitOfWork":
@@ -287,9 +243,12 @@ class KnowledgeUnitOfWork(Protocol):
 __all__ = [
     "CreateDocument",
     "CreateDocumentAclGrant",
+    "CreateDocumentArtifact",
     "CreateDocumentVersion",
     "DocumentAclGrantState",
     "DocumentAclRepository",
+    "DocumentArtifactRepository",
+    "DocumentArtifactState",
     "DocumentField",
     "DocumentPatch",
     "DocumentRepository",

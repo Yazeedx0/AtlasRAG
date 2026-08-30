@@ -3,7 +3,7 @@ from collections.abc import Collection
 from datetime import datetime
 from typing import Protocol
 
-from atlasrag.contracts.authorization_types import DocumentPermission
+from atlasrag.contracts.types.authorization_types import DocumentPermission
 
 
 class DocumentAccessRepository(Protocol):

@@ -6,7 +6,7 @@ from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from atlasrag.contracts.authorization_types import DocumentPermission
+from atlasrag.contracts.types.authorization_types import DocumentPermission
 from atlasrag.platform.database.base import Base
 
 DOCUMENT_PERMISSION_DB_ENUM = SqlEnum(

@@ -15,8 +15,8 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from atlasrag.bootstrap.core.config import Settings, get_settings
 from atlasrag.contracts.authentication import AuthenticatedIdentity
-from atlasrag.contracts.authorization_types import DocumentPermission
-from atlasrag.contracts.identity_types import LocalUserIdentity
+from atlasrag.contracts.types.authorization_types import DocumentPermission
+from atlasrag.contracts.types.identity_types import LocalUserIdentity
 from atlasrag.contracts.permissions import Permission
 from atlasrag.modules.identity.enums import PrincipalType
 from atlasrag.modules.identity.models import (

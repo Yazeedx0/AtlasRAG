@@ -31,7 +31,7 @@ from atlasrag.modules.identity.models import (
     Users,
 )
 from atlasrag.modules.identity.repositories.effective_principal import (
-    SqlAlchemyEffectivePrincipalRepository,
+    EffectivePrincipalRepository,
 )
 from atlasrag.modules.identity.repositories.permission_repository import (
     SqlAlchemyPermissionRepository,
@@ -54,8 +54,8 @@ from atlasrag.modules.identity.services.permission_management import (
 from atlasrag.modules.identity.services.principal_lifecycle import PrincipalLifecycle
 from atlasrag.modules.identity.services.role_assignment import RoleAssignmentService
 from atlasrag.modules.knowledge.models import Document
-from atlasrag.modules.knowledge.repositories.document_access_repository import (
-    SqlAlchemyDocumentAccessRepository,
+from atlasrag.modules.knowledge.repositories.document_access import (
+    DocumentAccessRepository,
 )
 from atlasrag.modules.knowledge.services.document_authorization import (
     DocumentAuthorizationService,
@@ -233,7 +233,7 @@ async def add_superadmin_role(session: AsyncSession) -> UUID:
 def permission_service(session: AsyncSession) -> PermissionAuthorizationService:
     return PermissionAuthorizationService(
         effective_principal_resolver=EffectivePrincipalResolver(
-            SqlAlchemyEffectivePrincipalRepository(session)
+            EffectivePrincipalRepository(session)
         ),
         permission_repository=SqlAlchemyPermissionRepository(session),
         clock=lambda: _NOW,
@@ -545,10 +545,10 @@ async def test_superadmin_has_control_plane_permissions_without_document_acl_byp
         )
 
         effective_ids = await EffectivePrincipalResolver(
-            SqlAlchemyEffectivePrincipalRepository(session)
+            EffectivePrincipalRepository(session)
         ).resolve_effective_principal_ids(user_id)
         can_read = await DocumentAuthorizationService(
-            SqlAlchemyDocumentAccessRepository(session)
+            DocumentAccessRepository(session)
         ).can_read_document(
             document_id=document_id,
             effective_principal_ids=effective_ids,

@@ -16,7 +16,7 @@ from atlasrag.platform.database.integrity import is_integrity_error_for_constrai
 _ACTIVE_DOCUMENT_ACL_CONSTRAINT = "uq_document_acl_active_grant"
 
 
-class SqlAlchemyDocumentAclRepository:
+class DocumentAclRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 

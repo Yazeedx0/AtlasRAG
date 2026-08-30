@@ -13,7 +13,7 @@ from atlasrag.contracts.authentication import AuthenticatedIdentity
 from atlasrag.modules.identity.enums import PrincipalType
 from atlasrag.modules.identity.models import Group, Principal, Role, UserIdentifier, Users
 from atlasrag.modules.identity.repositories.identity import (
-    SqlAlchemyIdentityRepository,
+    IdentityRepository,
 )
 from atlasrag.modules.identity.repositories.unit_of_work import (
     make_identity_unit_of_work_factory,
@@ -41,7 +41,7 @@ async def resolve_with_fresh_lookup(
 ) -> UUID:
     async with session_factory() as lookup_session:
         resolver = IdentityResolver(
-            SqlAlchemyIdentityRepository(lookup_session),
+            IdentityRepository(lookup_session),
             make_identity_unit_of_work_factory(session_factory),
             EnabledProvisioningPolicy(),
         )

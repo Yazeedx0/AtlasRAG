@@ -10,7 +10,7 @@ from atlasrag.bootstrap.identity import ConfiguredProvisioningPolicy
 from atlasrag.contracts.authentication import AuthenticatedIdentity
 from atlasrag.contracts.identity_errors import IdentityResolutionError
 from atlasrag.modules.identity.repositories.identity import (
-    SqlAlchemyIdentityRepository,
+    IdentityRepository,
 )
 from atlasrag.modules.identity.repositories.unit_of_work import (
     make_identity_unit_of_work_factory,
@@ -30,7 +30,7 @@ DatabaseSession = Annotated[AsyncSession, Depends(get_db_session)]
 async def get_identity_resolver(session: DatabaseSession) -> IdentityResolver:
     settings = get_settings()
     return IdentityResolver(
-        repository=SqlAlchemyIdentityRepository(session),
+        repository=IdentityRepository(session),
         uow_factory=make_identity_unit_of_work_factory(async_session_factory),
         policy=ConfiguredProvisioningPolicy(settings.IDENTITY_JIT_ENABLED),
     )

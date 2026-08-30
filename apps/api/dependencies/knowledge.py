@@ -9,11 +9,11 @@ from atlasrag.contracts.documents import (
 )
 from atlasrag.contracts.identity import PrincipalRepository
 from atlasrag.modules.identity.repositories.principal import SqlAlchemyPrincipalRepository
-from atlasrag.modules.knowledge.repositories.document_acl_repository import (
-    SqlAlchemyDocumentAclRepository,
+from atlasrag.modules.knowledge.repositories.document_acl import (
+    DocumentAclRepository,
 )
-from atlasrag.modules.knowledge.repositories.document_repository import (
-    SqlAlchemyDocumentRepository,
+from atlasrag.modules.knowledge.repositories.document import (
+    DocumentRepository,
 )
 from atlasrag.modules.knowledge.services.document_acl_management import (
     DocumentAclManagementService,
@@ -35,8 +35,8 @@ class SqlAlchemyKnowledgeUnitOfWork:
 
     async def __aenter__(self) -> "SqlAlchemyKnowledgeUnitOfWork":
         self._session = self._session_factory()
-        self.documents = SqlAlchemyDocumentRepository(self._session)
-        self.acl = SqlAlchemyDocumentAclRepository(self._session)
+        self.documents = DocumentRepository(self._session)
+        self.acl = DocumentAclRepository(self._session)
         self.principals = SqlAlchemyPrincipalRepository(self._session)
         return self
 

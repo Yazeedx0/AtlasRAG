@@ -13,7 +13,7 @@ from atlasrag.contracts.permissions import Permission
 from atlasrag.modules.identity.models import PermissionDefinition, PrincipalPermission
 
 
-class SqlAlchemyPermissionRepository:
+class PermissionRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 

@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 from atlasrag.modules.identity.enums import PrincipalType
 from atlasrag.modules.identity.models import Group, GroupMembership, Principal
 from atlasrag.modules.identity.repositories.group_membership import (
-    SqlAlchemyGroupMembershipRepository,
+    GroupMembershipRepository,
 )
 
 
@@ -81,7 +81,7 @@ async def test_would_create_cycle_detects_transitive_active_path(
     target_group_id, member_group_id, _ = await make_membership_database(session_factory)
 
     async with session_factory() as session:
-        repository = SqlAlchemyGroupMembershipRepository(session)
+        repository = GroupMembershipRepository(session)
 
         result = await repository.would_create_cycle(
             group_principal_id=target_group_id,
@@ -103,7 +103,7 @@ async def test_would_create_cycle_ignores_removed_membership(
     )
 
     async with session_factory() as session:
-        repository = SqlAlchemyGroupMembershipRepository(session)
+        repository = GroupMembershipRepository(session)
 
         result = await repository.would_create_cycle(
             group_principal_id=target_group_id,

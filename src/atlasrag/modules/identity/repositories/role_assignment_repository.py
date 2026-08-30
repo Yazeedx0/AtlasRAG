@@ -8,7 +8,7 @@ from atlasrag.contracts.identity_types import AssignedRole
 from atlasrag.modules.identity.models import Role, UserRole, Users
 
 
-class SqlAlchemyRoleAssignmentRepository:
+class RoleAssignmentRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 

@@ -14,7 +14,7 @@ from atlasrag.platform.database.integrity import is_integrity_error_for_constrai
 _ACTIVE_IDENTITY_CONSTRAINT = "uq_user_identifiers_active_identity"
 
 
-class SqlAlchemyIdentityRepository:
+class IdentityRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 

@@ -20,7 +20,7 @@ from atlasrag.modules.identity.builtin_roles import SUPERADMIN_ROLE_KEY
 from atlasrag.modules.identity.enums import IdentifierType, PrincipalType
 from atlasrag.modules.identity.models import Principal, Role, UserIdentifier, Users
 from atlasrag.modules.identity.repositories.identity import (
-    SqlAlchemyIdentityRepository,
+    IdentityRepository,
 )
 from atlasrag.modules.identity.repositories.unit_of_work import (
     make_identity_unit_of_work_factory,
@@ -131,7 +131,7 @@ async def auth_api(
     async def override_identity_resolver() -> AsyncIterator[IdentityResolver]:
         async with session_factory() as lookup_session:
             yield IdentityResolver(
-                repository=SqlAlchemyIdentityRepository(lookup_session),
+                repository=IdentityRepository(lookup_session),
                 uow_factory=make_identity_unit_of_work_factory(session_factory),
                 policy=ConfiguredProvisioningPolicy(enabled=True),
             )

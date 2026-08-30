@@ -14,26 +14,26 @@ from atlasrag.contracts.permission_authorization import (
     SuperadminRepository,
 )
 from atlasrag.modules.identity.repositories.group_membership import (
-    SqlAlchemyGroupMembershipRepository,
+    GroupMembershipRepository,
 )
 from atlasrag.modules.identity.repositories.identity import (
-    SqlAlchemyIdentityRepository,
+    IdentityRepository,
 )
 from atlasrag.modules.identity.repositories.permission_repository import (
-    SqlAlchemyPermissionRepository,
+    PermissionRepository,
 )
 from atlasrag.modules.identity.repositories.principal import (
-    SqlAlchemyPrincipalRepository,
+    PrincipalRepository,
 )
 from atlasrag.modules.identity.repositories.role_assignment_repository import (
-    SqlAlchemyRoleAssignmentRepository,
+    RoleAssignmentRepository,
 )
 from atlasrag.modules.identity.repositories.superadmin_repository import (
-    SqlAlchemySuperadminRepository,
+    SuperadminRepository,
 )
 
 
-class SqlAlchemyIdentityUnitOfWork:
+class IdentityUnitOfWork:
     identities: IdentityRepository
     principals: PrincipalRepository
     memberships: GroupMembershipRepository
@@ -45,14 +45,14 @@ class SqlAlchemyIdentityUnitOfWork:
         self._session_factory = session_factory
         self._session: AsyncSession | None = None
 
-    async def __aenter__(self) -> "SqlAlchemyIdentityUnitOfWork":
+    async def __aenter__(self) -> "IdentityUnitOfWork":
         self._session = self._session_factory()
-        self.identities = SqlAlchemyIdentityRepository(self._session)
-        self.principals = SqlAlchemyPrincipalRepository(self._session)
-        self.memberships = SqlAlchemyGroupMembershipRepository(self._session)
-        self.permissions = SqlAlchemyPermissionRepository(self._session)
-        self.role_assignments = SqlAlchemyRoleAssignmentRepository(self._session)
-        self.superadmins = SqlAlchemySuperadminRepository(self._session)
+        self.identities = IdentityRepository(self._session)
+        self.principals = PrincipalRepository(self._session)
+        self.memberships = GroupMembershipRepository(self._session)
+        self.permissions = PermissionRepository(self._session)
+        self.role_assignments = RoleAssignmentRepository(self._session)
+        self.superadmins = SuperadminRepository(self._session)
         return self
 
     async def __aexit__(
@@ -81,8 +81,8 @@ class SqlAlchemyIdentityUnitOfWork:
 
 def make_identity_unit_of_work_factory(
     session_factory: async_sessionmaker[AsyncSession],
-) -> Callable[[], SqlAlchemyIdentityUnitOfWork]:
-    def factory() -> SqlAlchemyIdentityUnitOfWork:
-        return SqlAlchemyIdentityUnitOfWork(session_factory)
+) -> Callable[[], IdentityUnitOfWork]:
+    def factory() -> IdentityUnitOfWork:
+        return IdentityUnitOfWork(session_factory)
 
     return factory

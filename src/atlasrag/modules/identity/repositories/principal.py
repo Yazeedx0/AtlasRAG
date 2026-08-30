@@ -9,7 +9,7 @@ from atlasrag.contracts.identity_types import PrincipalState
 from atlasrag.modules.identity.models import Principal
 
 
-class SqlAlchemyPrincipalRepository:
+class PrincipalRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 

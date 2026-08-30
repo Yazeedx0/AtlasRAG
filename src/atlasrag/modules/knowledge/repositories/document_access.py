@@ -9,7 +9,7 @@ from atlasrag.contracts.authorization_types import DocumentPermission
 from atlasrag.modules.knowledge.models import Document, DocumentACL
 
 
-class SqlAlchemyDocumentAccessRepository:
+class DocumentAccessRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 

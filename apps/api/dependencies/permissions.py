@@ -8,7 +8,7 @@ from apps.api.dependencies.identity import DatabaseSession, get_local_principal_
 from atlasrag.contracts.permission_errors import PermissionDenied
 from atlasrag.contracts.permissions import Permission
 from atlasrag.modules.identity.repositories.effective_principal import (
-    SqlAlchemyEffectivePrincipalRepository,
+    EffectivePrincipalRepository,
 )
 from atlasrag.modules.identity.repositories.permission_repository import (
     SqlAlchemyPermissionRepository,
@@ -28,7 +28,7 @@ def get_permission_authorization_service(
 ) -> PermissionAuthorizationService:
     return PermissionAuthorizationService(
         effective_principal_resolver=EffectivePrincipalResolver(
-            SqlAlchemyEffectivePrincipalRepository(session)
+            EffectivePrincipalRepository(session)
         ),
         permission_repository=SqlAlchemyPermissionRepository(session),
     )

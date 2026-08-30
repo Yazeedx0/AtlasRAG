@@ -28,7 +28,7 @@ from atlasrag.modules.identity.models import (
     Role,
     UserRole,
 )
-from atlasrag.modules.identity.repositories.identity import SqlAlchemyIdentityRepository
+from atlasrag.modules.identity.repositories.identity import IdentityRepository
 from atlasrag.modules.knowledge.models import Document, DocumentACL
 from scripts.bootstrap_superadmin import bootstrap_superadmin
 
@@ -575,7 +575,7 @@ async def _ensure_local_user(
     )
 
     async with session_factory() as session:
-        repository = SqlAlchemyIdentityRepository(session)
+        repository = IdentityRepository(session)
         existing = await repository.find_by_oidc_subject(
             issuer=issuer,
             subject=subject,

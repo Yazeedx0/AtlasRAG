@@ -8,8 +8,8 @@ from atlasrag.contracts.authorization_types import DocumentPermission
 from atlasrag.modules.identity.enums import PrincipalType
 from atlasrag.modules.identity.models import Group, Principal, Role, Users
 from atlasrag.modules.knowledge.models import Document, DocumentACL
-from atlasrag.modules.knowledge.repositories.document_access_repository import (
-    SqlAlchemyDocumentAccessRepository,
+from atlasrag.modules.knowledge.repositories.document_access import (
+    DocumentAccessRepository,
 )
 from atlasrag.modules.knowledge.services.document_authorization import (
     DocumentAuthorizationService,
@@ -101,7 +101,7 @@ async def can_read_document(
 ) -> bool:
     async with session_factory() as session:
         service = DocumentAuthorizationService(
-            SqlAlchemyDocumentAccessRepository(session)
+            DocumentAccessRepository(session)
         )
         return await service.can_read_document(
             document_id=document_id,
@@ -412,7 +412,7 @@ async def test_document_access_repository_denies_empty_principal_collection(
     _, session_factory = identity_database
 
     async with session_factory() as session:
-        repository = SqlAlchemyDocumentAccessRepository(session)
+        repository = DocumentAccessRepository(session)
 
         result = await repository.has_active_read_grant(
             document_id=uuid4(),

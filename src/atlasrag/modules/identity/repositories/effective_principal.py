@@ -7,7 +7,7 @@ from atlasrag.modules.identity.enums import PrincipalType
 from atlasrag.modules.identity.models import GroupMembership, Principal, UserRole, Users
 
 
-class SqlAlchemyEffectivePrincipalRepository:
+class EffectivePrincipalRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 

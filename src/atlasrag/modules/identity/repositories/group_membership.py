@@ -14,7 +14,7 @@ from atlasrag.platform.database.integrity import is_integrity_error_for_constrai
 _ACTIVE_MEMBERSHIP_CONSTRAINT = "uq_group_memberships_active_membership"
 
 
-class SqlAlchemyGroupMembershipRepository:
+class GroupMembershipRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 

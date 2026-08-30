@@ -20,7 +20,7 @@ from atlasrag.platform.database.integrity import is_integrity_error_for_constrai
 _DOCUMENT_CANONICAL_KEY_CONSTRAINT = "uq_documents_canonical_key"
 
 
-class SqlAlchemyDocumentRepository:
+class DocumentRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 

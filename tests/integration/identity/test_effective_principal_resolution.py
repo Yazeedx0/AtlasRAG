@@ -14,7 +14,7 @@ from atlasrag.modules.identity.models import (
     Users,
 )
 from atlasrag.modules.identity.repositories.effective_principal import (
-    SqlAlchemyEffectivePrincipalRepository,
+    EffectivePrincipalRepository,
 )
 from atlasrag.modules.identity.services.effective_principal_resolver import (
     EffectivePrincipalResolver,
@@ -288,7 +288,7 @@ async def test_resolve_effective_principal_ids_returns_active_unique_principals(
 
     async with session_factory() as session:
         resolver = EffectivePrincipalResolver(
-            SqlAlchemyEffectivePrincipalRepository(session)
+            EffectivePrincipalRepository(session)
         )
 
         result = await resolver.resolve_effective_principal_ids(user_id)
@@ -325,7 +325,7 @@ async def test_resolve_effective_principal_ids_returns_empty_for_unusable_user(
 
     async with session_factory() as session:
         resolver = EffectivePrincipalResolver(
-            SqlAlchemyEffectivePrincipalRepository(session)
+            EffectivePrincipalRepository(session)
         )
 
         result = await resolver.resolve_effective_principal_ids(user_id)

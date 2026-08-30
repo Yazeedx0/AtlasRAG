@@ -7,7 +7,7 @@ from atlasrag.modules.identity.builtin_roles import SUPERADMIN_ROLE_KEY
 from atlasrag.modules.identity.models import Principal, Role, UserRole
 
 
-class SqlAlchemySuperadminRepository:
+class SuperadminRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 

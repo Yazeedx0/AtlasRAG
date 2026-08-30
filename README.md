@@ -42,6 +42,8 @@ docs/         architecture, ADRs, diagrams, runbooks
 The dependency rule: `modules → platform → contracts`. Modules never import each other;
 `tests/architecture` enforces it via import-linter.
 
+The HTTP endpoint and request/response reference is available in [docs/API.md](docs/API.md).
+
 ## Getting started
 
 ```bash

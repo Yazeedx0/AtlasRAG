@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from types import TracebackType
 from uuid import UUID, uuid4
 
@@ -233,7 +233,7 @@ async def test_resolve_rejects_retired_principal() -> None:
             LocalUserIdentity(
                 principal_id=uuid4(),
                 is_active=False,
-                deleted_at=datetime.now(timezone.utc),
+                deleted_at=datetime.now(UTC),
             )
         ),
         FailingUowFactory(),
@@ -306,7 +306,7 @@ async def test_resolve_rejects_retired_principal_found_on_recheck() -> None:
         recheck_result=LocalUserIdentity(
             principal_id=uuid4(),
             is_active=False,
-            deleted_at=datetime.now(timezone.utc),
+            deleted_at=datetime.now(UTC),
         ),
     )
     uow = FakeUnitOfWork(provisioning_repository)
@@ -370,7 +370,7 @@ async def test_resolve_recovers_winner_after_provisioning_conflict() -> None:
     ("is_active", "deleted_at", "expected_error"),
     [
         (False, None, LocalIdentityDisabled),
-        (False, datetime.now(timezone.utc), LocalIdentityRetired),
+        (False, datetime.now(UTC), LocalIdentityRetired),
     ],
 )
 async def test_resolve_validates_winning_principal_lifecycle_after_conflict(

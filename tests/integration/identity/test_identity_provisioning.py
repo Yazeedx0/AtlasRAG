@@ -12,14 +12,14 @@ from sqlalchemy.ext.asyncio import (
 from atlasrag.contracts.authentication import AuthenticatedIdentity
 from atlasrag.modules.identity.enums import PrincipalType
 from atlasrag.modules.identity.models import Group, Principal, Role, UserIdentifier, Users
-from atlasrag.modules.identity.services.identity_resolver import IdentityResolver
-from atlasrag.platform.database import Base
 from atlasrag.modules.identity.repositories.identity import (
     SqlAlchemyIdentityRepository,
 )
 from atlasrag.modules.identity.repositories.unit_of_work import (
     make_identity_unit_of_work_factory,
 )
+from atlasrag.modules.identity.services.identity_resolver import IdentityResolver
+from atlasrag.platform.database import Base
 
 
 class EnabledProvisioningPolicy:

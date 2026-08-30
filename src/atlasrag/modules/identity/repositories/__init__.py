@@ -7,11 +7,11 @@ from atlasrag.modules.identity.repositories.group_membership import (
 from atlasrag.modules.identity.repositories.identity import (
     SqlAlchemyIdentityRepository,
 )
-from atlasrag.modules.identity.repositories.principal import (
-    SqlAlchemyPrincipalRepository,
-)
 from atlasrag.modules.identity.repositories.permission_repository import (
     SqlAlchemyPermissionRepository,
+)
+from atlasrag.modules.identity.repositories.principal import (
+    SqlAlchemyPrincipalRepository,
 )
 from atlasrag.modules.identity.repositories.role_assignment_repository import (
     SqlAlchemyRoleAssignmentRepository,
@@ -26,12 +26,12 @@ from atlasrag.modules.identity.repositories.unit_of_work import (
 
 __all__ = [
     "SqlAlchemyEffectivePrincipalRepository",
-    "SqlAlchemyIdentityRepository",
     "SqlAlchemyGroupMembershipRepository",
+    "SqlAlchemyIdentityRepository",
+    "SqlAlchemyIdentityUnitOfWork",
     "SqlAlchemyPermissionRepository",
     "SqlAlchemyPrincipalRepository",
     "SqlAlchemyRoleAssignmentRepository",
     "SqlAlchemySuperadminRepository",
-    "SqlAlchemyIdentityUnitOfWork",
     "make_identity_unit_of_work_factory",
 ]

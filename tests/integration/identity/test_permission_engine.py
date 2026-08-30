@@ -1,8 +1,9 @@
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 import pytest
+from scripts.bootstrap_superadmin import bootstrap_superadmin
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
@@ -59,12 +60,11 @@ from atlasrag.modules.knowledge.repositories.document_access_repository import (
 from atlasrag.modules.knowledge.services.document_authorization import (
     DocumentAuthorizationService,
 )
-from scripts.bootstrap_superadmin import bootstrap_superadmin
 
-_GRANTED_AT = datetime(2026, 8, 29, tzinfo=timezone.utc)
-_NOW = datetime(2026, 8, 30, tzinfo=timezone.utc)
-_REVOKED_AT = datetime(2026, 8, 30, tzinfo=timezone.utc)
-_FUTURE = datetime(2026, 8, 31, tzinfo=timezone.utc)
+_GRANTED_AT = datetime(2026, 8, 29, tzinfo=UTC)
+_NOW = datetime(2026, 8, 30, tzinfo=UTC)
+_REVOKED_AT = datetime(2026, 8, 30, tzinfo=UTC)
+_FUTURE = datetime(2026, 8, 31, tzinfo=UTC)
 
 
 async def add_principal(

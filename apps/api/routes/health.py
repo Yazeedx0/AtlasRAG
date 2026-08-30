@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Response, status
-
-from apps.api.schemas.health import LivenessResponse, ReadinessResponse
 from src import get_settings
 
+from apps.api.schemas.health import LivenessResponse, ReadinessResponse
 
 settings = get_settings()
 

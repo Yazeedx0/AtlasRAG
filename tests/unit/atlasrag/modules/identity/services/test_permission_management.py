@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from types import TracebackType
 from uuid import UUID, uuid4
 
@@ -20,7 +20,7 @@ from atlasrag.modules.identity.services.permission_management import (
     PermissionManagementService,
 )
 
-_NOW = datetime(2026, 8, 30, tzinfo=timezone.utc)
+_NOW = datetime(2026, 8, 30, tzinfo=UTC)
 
 
 class FakePrincipalRepository:

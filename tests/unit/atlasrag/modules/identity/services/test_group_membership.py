@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from types import TracebackType
 from typing import cast
 from uuid import UUID, uuid4
@@ -13,9 +13,9 @@ from atlasrag.contracts.identity import (
 from atlasrag.contracts.identity_types import PrincipalState
 from atlasrag.modules.identity.enums import PrincipalType
 from atlasrag.modules.identity.helpers.errors import (
-    GroupMemberTypeNotAllowed,
-    GroupMembershipAlreadyExists,
     GroupCycleDetected,
+    GroupMembershipAlreadyExists,
+    GroupMemberTypeNotAllowed,
     GroupPrincipalRequired,
     GroupSelfMembership,
     InvalidPrincipalType,
@@ -167,7 +167,7 @@ async def test_add_group_member_adds_membership_and_commits() -> None:
     group_id = uuid4()
     member_id = uuid4()
     actor_id = uuid4()
-    added_at = datetime(2026, 8, 30, tzinfo=timezone.utc)
+    added_at = datetime(2026, 8, 30, tzinfo=UTC)
     service, principals, memberships, uow = make_service(
         [
             make_state(group_id, PrincipalType.GROUP),
@@ -215,7 +215,7 @@ async def test_add_group_member_adds_membership_and_commits() -> None:
                     uuid4(),
                     PrincipalType.GROUP,
                     is_active=False,
-                    deleted_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+                    deleted_at=datetime(2026, 1, 1, tzinfo=UTC),
                 )
             ],
             PrincipalRetired,
@@ -236,7 +236,7 @@ async def test_add_group_member_validates_target_group(
             group_id,
             member_id,
             uuid4(),
-            datetime.now(timezone.utc),
+            datetime.now(UTC),
         )
 
     assert principals.find_calls == [group_id]
@@ -258,7 +258,7 @@ async def test_add_group_member_validates_target_group(
                 uuid4(),
                 PrincipalType.USER,
                 is_active=False,
-                deleted_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+                deleted_at=datetime(2026, 1, 1, tzinfo=UTC),
             ),
             PrincipalRetired,
         ),
@@ -282,7 +282,7 @@ async def test_add_group_member_validates_member(
             group_id,
             member_id,
             uuid4(),
-            datetime.now(timezone.utc),
+            datetime.now(UTC),
         )
 
     assert principals.find_calls == [group_id, member_id]
@@ -305,7 +305,7 @@ async def test_add_group_member_rejects_self_membership() -> None:
             group_id,
             group_id,
             uuid4(),
-            datetime.now(timezone.utc),
+            datetime.now(UTC),
         )
 
     assert principals.find_calls == []
@@ -335,7 +335,7 @@ async def test_add_group_member_rejects_duplicate_active_membership() -> None:
             group_id,
             member_id,
             uuid4(),
-            datetime.now(timezone.utc),
+            datetime.now(UTC),
         )
 
     assert principals.find_calls == [group_id, member_id]
@@ -364,7 +364,7 @@ async def test_add_group_member_rejects_group_cycle() -> None:
             group_id,
             member_group_id,
             uuid4(),
-            datetime.now(timezone.utc),
+            datetime.now(UTC),
         )
 
     assert principals.find_calls == [group_id, member_group_id]
@@ -395,7 +395,7 @@ async def test_add_group_member_propagates_repository_error_without_commit() -> 
             group_id,
             member_id,
             uuid4(),
-            datetime.now(timezone.utc),
+            datetime.now(UTC),
         )
 
     assert principals.find_calls == [group_id, member_id]

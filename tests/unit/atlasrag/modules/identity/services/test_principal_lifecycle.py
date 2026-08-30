@@ -1,5 +1,5 @@
 from collections.abc import Awaitable, Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from types import TracebackType
 from uuid import UUID, uuid4
 
@@ -284,7 +284,7 @@ async def test_lifecycle_rejects_retired_principal(operation: LifecycleOperation
         make_state(
             principal_id,
             is_active=False,
-            deleted_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            deleted_at=datetime(2026, 1, 1, tzinfo=UTC),
         ),
     )
 

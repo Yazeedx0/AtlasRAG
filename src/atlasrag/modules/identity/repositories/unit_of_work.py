@@ -19,11 +19,11 @@ from atlasrag.modules.identity.repositories.group_membership import (
 from atlasrag.modules.identity.repositories.identity import (
     SqlAlchemyIdentityRepository,
 )
-from atlasrag.modules.identity.repositories.principal import (
-    SqlAlchemyPrincipalRepository,
-)
 from atlasrag.modules.identity.repositories.permission_repository import (
     SqlAlchemyPermissionRepository,
+)
+from atlasrag.modules.identity.repositories.principal import (
+    SqlAlchemyPrincipalRepository,
 )
 from atlasrag.modules.identity.repositories.role_assignment_repository import (
     SqlAlchemyRoleAssignmentRepository,

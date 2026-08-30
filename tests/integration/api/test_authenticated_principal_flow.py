@@ -1,23 +1,23 @@
 from collections.abc import AsyncIterator, Mapping
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 import httpx
 import jwt
 import pytest
 import pytest_asyncio
+from apps.api.dependencies.identity import get_identity_resolver
+from apps.api.router import api_router
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from fastapi import FastAPI
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
-from apps.api.dependencies.identity import get_identity_resolver
-from apps.api.router import api_router
 from atlasrag.bootstrap.identity import ConfiguredProvisioningPolicy
-from atlasrag.modules.identity.enums import IdentifierType, PrincipalType
 from atlasrag.modules.identity.builtin_roles import SUPERADMIN_ROLE_KEY
+from atlasrag.modules.identity.enums import IdentifierType, PrincipalType
 from atlasrag.modules.identity.models import Principal, Role, UserIdentifier, Users
 from atlasrag.modules.identity.repositories.identity import (
     SqlAlchemyIdentityRepository,
@@ -75,7 +75,7 @@ def make_access_token(
     private_key: RSAPrivateKey | None = None,
     claim_overrides: Mapping[str, object] | None = None,
 ) -> str:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     claims: dict[str, object] = {
         "iss": ISSUER,
         "sub": SUBJECT,
@@ -241,7 +241,7 @@ async def test_valid_access_token_resolves_and_reuses_local_principal(
     [
         {"iss": "https://untrusted.example.com/realms/atlasrag"},
         {"aud": "another-api"},
-        {"exp": datetime.now(timezone.utc) - timedelta(minutes=1)},
+        {"exp": datetime.now(UTC) - timedelta(minutes=1)},
     ],
     ids=["wrong-issuer", "wrong-audience", "expired"],
 )

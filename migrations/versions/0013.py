@@ -7,7 +7,7 @@ Create Date: 2026-08-30
 """
 
 from collections.abc import Sequence
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -48,7 +48,7 @@ PERMISSIONS = (
 
 SUPERADMIN_ROLE_PRINCIPAL_ID = UUID("7f1ec96f-ae1b-4bc2-8f1d-840d8be90c4b")
 SUPERADMIN_ROLE_KEY = "superadmin"
-SUPERADMIN_GRANTED_AT = datetime(2026, 8, 30, tzinfo=timezone.utc)
+SUPERADMIN_GRANTED_AT = datetime(2026, 8, 30, tzinfo=UTC)
 SUPERADMIN_PERMISSION_GRANT_IDS = (
     UUID("4a49a8e6-e0de-4505-ac9d-3c1588967f70"),
     UUID("8b5ecf64-e7f7-4ea7-8fa0-d710e76b0203"),

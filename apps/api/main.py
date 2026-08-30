@@ -1,8 +1,8 @@
 from fastapi import FastAPI
+from src import get_settings
 
 from apps.api.router import api_router, register_exception_handlers
 from atlasrag.bootstrap.lifespan import lifespan
-from src import get_settings
 
 settings = get_settings()
 

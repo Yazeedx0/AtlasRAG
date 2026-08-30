@@ -1,9 +1,9 @@
 from uuid import UUID, uuid4
 
 import pytest
+from apps.api.dependencies.permissions import require_permission
 from fastapi import HTTPException, status
 
-from apps.api.dependencies.permissions import require_permission
 from atlasrag.contracts.permission_errors import PermissionDenied
 from atlasrag.contracts.permissions import Permission
 

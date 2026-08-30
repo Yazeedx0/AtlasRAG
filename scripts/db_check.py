@@ -2,11 +2,10 @@ import asyncio
 import sys
 
 from sqlalchemy import text
-
-from apps.db.session import engine
+from src.atlasrag.platform.database.engine import get_engine 
 
 REQUIRED_EXTENSIONS = ["vector", "btree_gist"]
-
+engine = get_engine()
 
 async def main() -> None:
     async with engine.connect() as connection:

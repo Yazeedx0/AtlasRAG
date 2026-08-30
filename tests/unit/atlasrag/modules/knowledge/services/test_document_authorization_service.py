@@ -1,5 +1,5 @@
 from collections.abc import Collection
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 import pytest
@@ -33,7 +33,7 @@ async def test_can_read_document_denies_empty_effective_principals_without_query
     result = await service.can_read_document(
         document_id=uuid4(),
         effective_principal_ids=frozenset(),
-        at=datetime(2026, 9, 1, tzinfo=timezone.utc),
+        at=datetime(2026, 9, 1, tzinfo=UTC),
     )
 
     assert result is False
@@ -47,7 +47,7 @@ async def test_can_read_document_returns_repository_decision(
 ) -> None:
     document_id = uuid4()
     principal_ids = frozenset({uuid4(), uuid4()})
-    evaluated_at = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    evaluated_at = datetime(2026, 9, 1, tzinfo=UTC)
     repository = FakeDocumentAccessRepository(result=repository_result)
     service = DocumentAuthorizationService(repository)
 

@@ -4,13 +4,6 @@ from sqlalchemy import Enum as SqlEnum
 
 from atlasrag.contracts.identity import IdentifierType
 
-__all__ = [
-    "IdentifierType",
-    "PRINCIPAL_TYPE_DB_ENUM",
-    "PrincipalType",
-]
-
-
 class PrincipalType(Enum):
 
     USER = "user"
@@ -24,3 +17,11 @@ PRINCIPAL_TYPE_DB_ENUM = SqlEnum(
     schema="iam",
     values_callable=lambda enum: [member.value for member in enum],
 )
+
+
+__all__ = [
+    "PRINCIPAL_TYPE_DB_ENUM",
+    "IdentifierType",
+    "PrincipalType",
+]
+

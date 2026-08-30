@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 import pytest
@@ -40,7 +40,7 @@ async def make_membership_database(
     target_group_id = uuid4()
     middle_group_id = uuid4()
     member_group_id = uuid4()
-    added_at = datetime(2026, 8, 30, tzinfo=timezone.utc)
+    added_at = datetime(2026, 8, 30, tzinfo=UTC)
 
     async with session_factory() as session:
         await add_group(session, principal_id=target_group_id, group_key="target")
@@ -99,7 +99,7 @@ async def test_would_create_cycle_ignores_removed_membership(
     _, session_factory = identity_database
     target_group_id, member_group_id, _ = await make_membership_database(
         session_factory,
-        removed_at=datetime(2026, 8, 31, tzinfo=timezone.utc),
+        removed_at=datetime(2026, 8, 31, tzinfo=UTC),
     )
 
     async with session_factory() as session:

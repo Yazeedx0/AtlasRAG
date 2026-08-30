@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 import pytest
@@ -7,15 +7,15 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 from atlasrag.contracts.authorization_types import DocumentPermission
 from atlasrag.modules.identity.enums import PrincipalType
 from atlasrag.modules.identity.models import Group, Principal, Role, Users
+from atlasrag.modules.knowledge.models import Document, DocumentACL
 from atlasrag.modules.knowledge.repositories.document_access_repository import (
     SqlAlchemyDocumentAccessRepository,
 )
-from atlasrag.modules.knowledge.models import Document, DocumentACL
 from atlasrag.modules.knowledge.services.document_authorization import (
     DocumentAuthorizationService,
 )
 
-_EVALUATED_AT = datetime(2026, 9, 1, 12, tzinfo=timezone.utc)
+_EVALUATED_AT = datetime(2026, 9, 1, 12, tzinfo=UTC)
 
 
 async def add_principal(

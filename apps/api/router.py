@@ -6,9 +6,9 @@ versioned API prefix.
 
 from fastapi import APIRouter
 
-from apps.api.utilities.exception_handlers import register_exception_handlers
 from apps.api.routes import health
 from apps.api.routes.iam import authentication, principals
+from apps.api.utilities.exception_handlers import register_exception_handlers
 
 api_router = APIRouter()
 api_router.include_router(health.router)

@@ -1,5 +1,5 @@
 from collections.abc import Collection
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 import pytest
@@ -10,7 +10,7 @@ from atlasrag.modules.identity.services.permission_authorization import (
     PermissionAuthorizationService,
 )
 
-_NOW = datetime(2026, 8, 30, tzinfo=timezone.utc)
+_NOW = datetime(2026, 8, 30, tzinfo=UTC)
 
 
 class FakeEffectivePrincipalResolver:

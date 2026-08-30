@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 import pytest
@@ -20,8 +20,8 @@ from atlasrag.modules.identity.services.effective_principal_resolver import (
     EffectivePrincipalResolver,
 )
 
-_STARTED_AT = datetime(2026, 8, 30, tzinfo=timezone.utc)
-_ENDED_AT = datetime(2026, 8, 31, tzinfo=timezone.utc)
+_STARTED_AT = datetime(2026, 8, 30, tzinfo=UTC)
+_ENDED_AT = datetime(2026, 8, 31, tzinfo=UTC)
 
 
 async def add_principal(

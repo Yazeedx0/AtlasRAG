@@ -9,8 +9,6 @@ from sqlalchemy import Connection, pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from atlasrag import get_settings
-from atlasrag.modules.identity import models as _identity_models
-from atlasrag.modules.knowledge import models as _knowledge_models
 from atlasrag.platform.database import Base
 
 config = context.config

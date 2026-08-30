@@ -1,11 +1,11 @@
 import uuid
 from datetime import datetime
-from typing import cast
 
 from sqlalchemy import exists, insert, or_, select, update
 from sqlalchemy.engine import Row
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import InstrumentedAttribute
 
 from atlasrag.contracts.types.authorization_types import DocumentPermission
 from atlasrag.contracts.error.document_errors import DocumentAclGrantConflict
@@ -114,7 +114,7 @@ class DocumentAclRepository:
         return (await self._session.scalar(statement)) is not None
 
 
-def _acl_columns() -> tuple[object, ...]:
+def _acl_columns() -> tuple[InstrumentedAttribute, ...]:
     return (
         DocumentACL.id,
         DocumentACL.document_id,
@@ -128,15 +128,15 @@ def _acl_columns() -> tuple[object, ...]:
     )
 
 
-def _to_acl_grant_state(row: Row[tuple[object, ...]]) -> DocumentAclGrantState:
+def _to_acl_grant_state(row: Row) -> DocumentAclGrantState:
     return DocumentAclGrantState(
-        grant_id=cast(uuid.UUID, row.id),
-        document_id=cast(uuid.UUID, row.document_id),
-        principal_id=cast(uuid.UUID, row.principal_id),
-        permission=cast(DocumentPermission, row.permission),
-        granted_at=cast(datetime, row.granted_at),
-        granted_by_principal_id=cast(uuid.UUID | None, row.granted_by_principal_id),
-        expires_at=cast(datetime | None, row.expires_at),
-        revoked_at=cast(datetime | None, row.revoked_at),
-        revoked_by_principal_id=cast(uuid.UUID | None, row.revoked_by_principal_id),
+        grant_id=row.id,
+        document_id=row.document_id,
+        principal_id=row.principal_id,
+        permission=row.permission,
+        granted_at=row.granted_at,
+        granted_by_principal_id=row.granted_by_principal_id,
+        expires_at=row.expires_at,
+        revoked_at=row.revoked_at,
+        revoked_by_principal_id=row.revoked_by_principal_id,
     )

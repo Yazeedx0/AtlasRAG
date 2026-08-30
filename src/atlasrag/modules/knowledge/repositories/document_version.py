@@ -1,11 +1,11 @@
 from datetime import datetime
-from typing import cast
 from uuid import UUID
 
 from sqlalchemy import insert, or_, select, update
 from sqlalchemy.engine import Row
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import InstrumentedAttribute
 
 from atlasrag.contracts.documents import CreateDocumentVersion, DocumentVersionState
 from atlasrag.contracts.error.document_errors import DocumentVersionConflict, DocumentVersionOverlap
@@ -224,7 +224,7 @@ class DocumentVersionRepository:
         return _to_version_state(row) if row is not None else None
 
 
-def _version_columns() -> tuple[object, ...]:
+def _version_columns() -> tuple[InstrumentedAttribute, ...]:
     return (
         DocumentVersion.id,
         DocumentVersion.document_id,
@@ -240,17 +240,17 @@ def _version_columns() -> tuple[object, ...]:
     )
 
 
-def _to_version_state(row: Row[tuple[object, ...]]) -> DocumentVersionState:
+def _to_version_state(row: Row) -> DocumentVersionState:
     return DocumentVersionState(
-        version_id=cast(UUID, row.id),
-        document_id=cast(UUID, row.document_id),
-        version_label=cast(str, row.version_label),
-        effective_from=cast("datetime | None", row.effective_from),
-        effective_to=cast("datetime | None", row.effective_to),
-        published_at=cast("datetime | None", row.published_at),
-        status=cast(DocumentVersionStatus, row.status),
-        created_by_principal_id=cast("UUID | None", row.created_by_principal_id),
-        metadata=cast(dict[str, object], row.metadata_),
-        created_at=cast(datetime, row.created_at),
-        updated_at=cast(datetime, row.updated_at),
+        version_id=row.id,
+        document_id=row.document_id,
+        version_label=row.version_label,
+        effective_from=row.effective_from,
+        effective_to=row.effective_to,
+        published_at=row.published_at,
+        status=row.status,
+        created_by_principal_id=row.created_by_principal_id,
+        metadata=row.metadata_,
+        created_at=row.created_at,
+        updated_at=row.updated_at,
     )

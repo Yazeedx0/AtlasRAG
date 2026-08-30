@@ -1,11 +1,11 @@
 from datetime import datetime
-from typing import cast
 from uuid import UUID
 
 from sqlalchemy import exists, insert, select, update
 from sqlalchemy.engine import Row
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import InstrumentedAttribute
 
 from atlasrag.contracts.documents import (
     CreateDocument,
@@ -127,7 +127,7 @@ class DocumentRepository:
         return (await self._session.scalar(statement)) is not None
 
 
-def _document_columns() -> tuple[object, ...]:
+def _document_columns() -> tuple[InstrumentedAttribute, ...]:
     return (
         Document.id,
         Document.created_by_principal_id,
@@ -144,18 +144,18 @@ def _document_columns() -> tuple[object, ...]:
     )
 
 
-def _to_document_state(row: Row[tuple[object, ...]]) -> DocumentState:
+def _to_document_state(row: Row) -> DocumentState:
     return DocumentState(
-        document_id=cast(UUID, row.id),
-        created_by_principal_id=cast(UUID | None, row.created_by_principal_id),
-        canonical_key=cast(str, row.canonical_key),
-        title=cast(str, row.title),
-        description=cast(str | None, row.description),
-        document_type=cast(str | None, row.document_type),
-        department=cast(str | None, row.department),
-        default_language_code=cast(str | None, row.default_language_code),
-        metadata=cast(dict[str, object], row.metadata_),
-        created_at=cast(datetime, row.created_at),
-        updated_at=cast(datetime, row.updated_at),
-        deleted_at=cast(datetime | None, row.deleted_at),
+        document_id=row.id,
+        created_by_principal_id=row.created_by_principal_id,
+        canonical_key=row.canonical_key,
+        title=row.title,
+        description=row.description,
+        document_type=row.document_type,
+        department=row.department,
+        default_language_code=row.default_language_code,
+        metadata=row.metadata_,
+        created_at=row.created_at,
+        updated_at=row.updated_at,
+        deleted_at=row.deleted_at,
     )

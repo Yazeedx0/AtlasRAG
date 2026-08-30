@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import cast
 from uuid import UUID
 
 from sqlalchemy import insert, select, update
@@ -136,7 +135,7 @@ class DocumentArtifactRepository:
         return _to_artifact_state(row) if row is not None else None
 
 
-def _artifact_columns() -> tuple[object, ...]:
+def _artifact_columns() -> tuple[InstrumentedAttribute, ...]:
     return (
         DocumentArtifact.id,
         DocumentArtifact.document_version_id,
@@ -160,25 +159,25 @@ def _artifact_columns() -> tuple[object, ...]:
     )
 
 
-def _to_artifact_state(row: Row[tuple[object, ...]]) -> DocumentArtifactState:
+def _to_artifact_state(row: Row) -> DocumentArtifactState:
     return DocumentArtifactState(
-        artifact_id=cast(UUID, row.id),
-        document_version_id=cast(UUID, row.document_version_id),
-        artifact_key=cast(str, row.artifact_key),
-        language_code=cast(str, row.language_code),
-        source_name=cast(str, row.source_name),
-        source_uri=cast("str | None", row.source_uri),
-        source_updated_at=cast("datetime | None", row.source_updated_at),
-        storage_provider=cast(str, row.storage_provider),
-        storage_key=cast(str, row.storage_key),
-        mime_type=cast(str, row.mime_type),
-        file_hash=cast(str, row.file_hash),
-        file_size_bytes=cast(int, row.file_size_bytes),
-        status=cast(DocumentArtifactStatus, row.status),
-        created_by_principal_id=cast("UUID | None", row.created_by_principal_id),
-        metadata=cast(dict[str, object], row.metadata_),
-        created_at=cast(datetime, row.created_at),
-        updated_at=cast(datetime, row.updated_at),
-        retired_at=cast("datetime | None", row.retired_at),
-        deleted_at=cast("datetime | None", row.deleted_at),
+        artifact_id=row.id,
+        document_version_id=row.document_version_id,
+        artifact_key=row.artifact_key,
+        language_code=row.language_code,
+        source_name=row.source_name,
+        source_uri=row.source_uri,
+        source_updated_at=row.source_updated_at,
+        storage_provider=row.storage_provider,
+        storage_key=row.storage_key,
+        mime_type=row.mime_type,
+        file_hash=row.file_hash,
+        file_size_bytes=row.file_size_bytes,
+        status=row.status,
+        created_by_principal_id=row.created_by_principal_id,
+        metadata=row.metadata_,
+        created_at=row.created_at,
+        updated_at=row.updated_at,
+        retired_at=row.retired_at,
+        deleted_at=row.deleted_at,
     )

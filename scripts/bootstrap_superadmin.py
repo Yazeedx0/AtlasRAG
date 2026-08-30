@@ -14,7 +14,7 @@ from atlasrag.modules.identity.builtin_roles import SUPERADMIN_ROLE_KEY
 from atlasrag.modules.identity.enums import IdentifierType
 from atlasrag.modules.identity.models import Principal, Role, UserIdentifier, Users
 from atlasrag.modules.identity.repositories.role_assignment_repository import (
-    SqlAlchemyRoleAssignmentRepository,
+    RoleAssignmentRepository,
 )
 
 
@@ -59,7 +59,7 @@ async def bootstrap_superadmin(
         if role_id is None:
             raise RuntimeError("The superadmin system role is missing.")
 
-        repository = SqlAlchemyRoleAssignmentRepository(session)
+        repository = RoleAssignmentRepository(session)
         if await repository.has_active_assignment(
             user_principal_id=user_id,
             role_principal_id=role_id,

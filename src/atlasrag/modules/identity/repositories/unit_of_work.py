@@ -4,14 +4,14 @@ from types import TracebackType
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from atlasrag.contracts.identity import (
-    GroupMembershipRepository,
-    IdentityRepository,
-    PrincipalRepository,
-    RoleAssignmentRepository,
+    GroupMembershipRepository as GroupMembershipRepositoryContract,
+    IdentityRepository as IdentityRepositoryContract,
+    PrincipalRepository as PrincipalRepositoryContract,
+    RoleAssignmentRepository as RoleAssignmentRepositoryContract,
 )
 from atlasrag.contracts.permission_authorization import (
-    PermissionRepository,
-    SuperadminRepository,
+    PermissionRepository as PermissionRepositoryContract,
+    SuperadminRepository as SuperadminRepositoryContract,
 )
 from atlasrag.modules.identity.repositories.group_membership import (
     GroupMembershipRepository,
@@ -34,12 +34,12 @@ from atlasrag.modules.identity.repositories.superadmin_repository import (
 
 
 class IdentityUnitOfWork:
-    identities: IdentityRepository
-    principals: PrincipalRepository
-    memberships: GroupMembershipRepository
-    permissions: PermissionRepository
-    role_assignments: RoleAssignmentRepository
-    superadmins: SuperadminRepository
+    identities: IdentityRepositoryContract
+    principals: PrincipalRepositoryContract
+    memberships: GroupMembershipRepositoryContract
+    permissions: PermissionRepositoryContract
+    role_assignments: RoleAssignmentRepositoryContract
+    superadmins: SuperadminRepositoryContract
 
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._session_factory = session_factory

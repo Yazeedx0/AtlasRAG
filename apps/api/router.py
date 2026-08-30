@@ -6,8 +6,9 @@ versioned API prefix.
 
 from fastapi import APIRouter
 
-from apps.api.routes import documents, health
+from apps.api.routes import health
 from apps.api.routes.iam import authentication, groups, permissions, principals, roles
+from apps.api.routes.knowledge import documents
 from apps.api.utilities.exception_handlers import register_exception_handlers
 
 api_router = APIRouter()

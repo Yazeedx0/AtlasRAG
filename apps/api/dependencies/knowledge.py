@@ -4,11 +4,11 @@ from types import TracebackType
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from atlasrag.contracts.documents import (
-    DocumentAclRepository,
-    DocumentRepository,
+    DocumentAclRepository as DocumentAclRepositoryContract,
+    DocumentRepository as DocumentRepositoryContract,
 )
-from atlasrag.contracts.identity import PrincipalRepository
-from atlasrag.modules.identity.repositories.principal import SqlAlchemyPrincipalRepository
+from atlasrag.contracts.identity import PrincipalRepository as PrincipalRepositoryContract
+from atlasrag.modules.identity.repositories.principal import PrincipalRepository
 from atlasrag.modules.knowledge.repositories.document_acl import (
     DocumentAclRepository,
 )
@@ -24,20 +24,20 @@ from atlasrag.modules.knowledge.services.document_management import (
 from atlasrag.platform.database.session import async_session_factory
 
 
-class SqlAlchemyKnowledgeUnitOfWork:
-    documents: DocumentRepository
-    acl: DocumentAclRepository
-    principals: PrincipalRepository
+class KnowledgeUnitOfWork:
+    documents: DocumentRepositoryContract
+    acl: DocumentAclRepositoryContract
+    principals: PrincipalRepositoryContract
 
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._session_factory = session_factory
         self._session: AsyncSession | None = None
 
-    async def __aenter__(self) -> "SqlAlchemyKnowledgeUnitOfWork":
+    async def __aenter__(self) -> "KnowledgeUnitOfWork":
         self._session = self._session_factory()
         self.documents = DocumentRepository(self._session)
         self.acl = DocumentAclRepository(self._session)
-        self.principals = SqlAlchemyPrincipalRepository(self._session)
+        self.principals = PrincipalRepository(self._session)
         return self
 
     async def __aexit__(
@@ -66,9 +66,9 @@ class SqlAlchemyKnowledgeUnitOfWork:
 
 def make_knowledge_unit_of_work_factory(
     session_factory: async_sessionmaker[AsyncSession],
-) -> Callable[[], SqlAlchemyKnowledgeUnitOfWork]:
-    def factory() -> SqlAlchemyKnowledgeUnitOfWork:
-        return SqlAlchemyKnowledgeUnitOfWork(session_factory)
+) -> Callable[[], KnowledgeUnitOfWork]:
+    def factory() -> KnowledgeUnitOfWork:
+        return KnowledgeUnitOfWork(session_factory)
 
     return factory
 

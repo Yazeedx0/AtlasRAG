@@ -34,10 +34,10 @@ from atlasrag.modules.identity.repositories.effective_principal import (
     EffectivePrincipalRepository,
 )
 from atlasrag.modules.identity.repositories.permission_repository import (
-    SqlAlchemyPermissionRepository,
+    PermissionRepository,
 )
 from atlasrag.modules.identity.repositories.superadmin_repository import (
-    SqlAlchemySuperadminRepository,
+    SuperadminRepository,
 )
 from atlasrag.modules.identity.repositories.unit_of_work import (
     make_identity_unit_of_work_factory,
@@ -235,7 +235,7 @@ def permission_service(session: AsyncSession) -> PermissionAuthorizationService:
         effective_principal_resolver=EffectivePrincipalResolver(
             EffectivePrincipalRepository(session)
         ),
-        permission_repository=SqlAlchemyPermissionRepository(session),
+        permission_repository=PermissionRepository(session),
         clock=lambda: _NOW,
     )
 
@@ -571,7 +571,7 @@ async def test_normal_user_is_not_superadmin_or_implicitly_authorized(
         await add_permission_registry(session)
         await session.commit()
 
-        assert not await SqlAlchemySuperadminRepository(
+        assert not await SuperadminRepository(
             session
         ).user_has_superadmin_role(user_id)
         assert not await permission_service(session).is_allowed(

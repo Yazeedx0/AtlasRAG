@@ -8,7 +8,7 @@ from apps.api.dependencies.knowledge import (
     get_document_management_service,
 )
 from apps.api.dependencies.permissions import require_permission
-from apps.api.schemas.documents import (
+from apps.api.schemas.knowledge.documents import (
     DocumentAclGrantCreateRequest,
     DocumentAclGrantResponse,
     DocumentCreateRequest,

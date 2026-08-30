@@ -11,7 +11,7 @@ from atlasrag.modules.identity.repositories.effective_principal import (
     EffectivePrincipalRepository,
 )
 from atlasrag.modules.identity.repositories.permission_repository import (
-    SqlAlchemyPermissionRepository,
+    PermissionRepository,
 )
 from atlasrag.modules.identity.services.effective_principal_resolver import (
     EffectivePrincipalResolver,
@@ -30,7 +30,7 @@ def get_permission_authorization_service(
         effective_principal_resolver=EffectivePrincipalResolver(
             EffectivePrincipalRepository(session)
         ),
-        permission_repository=SqlAlchemyPermissionRepository(session),
+        permission_repository=PermissionRepository(session),
     )
 
 

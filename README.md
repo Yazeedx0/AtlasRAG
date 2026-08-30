@@ -123,6 +123,18 @@ owns the authentication lifecycle, and the frontend/BFF obtains the access token
 it to the API. The API is responsible for token verification, local identity resolution,
 and AtlasRAG authorization.
 
+### Object storage
+
+Source documents are stored in MinIO. Start it with:
+
+```bash
+docker compose -f infra/docker-compose.yml up -d minio minio-init
+```
+
+MinIO's S3 API is available at <http://localhost:9000> and its console at
+<http://localhost:9001>. The `minio-init` service creates the default bucket
+(`ATLAS_MINIO_BUCKET`) on startup and exits.
+
 ## Scoreboard
 
 Baseline and per-phase results land in `evals/reports/`, each tagged with its commit hash
@@ -135,3 +147,13 @@ and broken down **overall / EN / AR**. The table below is filled in from Phase 1
 | Correct refusal | — | — | ≥ 0.95 |
 | Conflict detection | — | — | ≥ 0.80 |
 | Status accuracy | — | — | ≥ 0.90 |
+
+## Contributing
+
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the local setup,
+the pre-push checks, and the rule that every quality claim needs a number from
+`evals/reports/`.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

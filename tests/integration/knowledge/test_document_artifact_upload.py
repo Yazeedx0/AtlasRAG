@@ -159,6 +159,16 @@ async def test_upload_persists_matching_postgres_row_and_minio_object(
         object_storage=minio_object_storage,
         max_file_size_bytes=1024 * 1024,
         accepted_language_codes={"ar", "en"},
+        allowed_content_types={
+            "application/pdf",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "text/html",
+            "text/markdown",
+            "text/plain",
+        },
+        artifact_key_max_length=255,
+        language_code_max_length=20,
+        storage_provider="s3",
     )
     result = await service.upload(
         UploadDocumentArtifact(

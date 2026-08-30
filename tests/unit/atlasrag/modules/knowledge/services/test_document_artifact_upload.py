@@ -283,6 +283,16 @@ def make_service(
         object_storage=object_storage,
         max_file_size_bytes=_MAX_FILE_SIZE_BYTES,
         accepted_language_codes={"ar", "en"},
+        allowed_content_types={
+            "application/pdf",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "text/html",
+            "text/markdown",
+            "text/plain",
+        },
+        artifact_key_max_length=255,
+        language_code_max_length=20,
+        storage_provider="s3",
         artifact_id_factory=lambda: generated_artifact_id,
         clock=lambda: _NOW,
     )

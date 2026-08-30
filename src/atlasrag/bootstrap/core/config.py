@@ -47,6 +47,19 @@ class Settings(BaseSettings):
     MINIO_BUCKET: str = "atlasrag"
     MINIO_REGION: str = "us-east-1"
 
+    ALLOWED_CONTENT_TYPES: frozenset[str] = frozenset(
+        {
+            "application/pdf",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "text/html",
+            "text/markdown",
+            "text/plain",
+        }
+    )
+    ARTIFACT_KEY_MAX_LENGTH: int = 255
+    LANGUAGE_CODE_MAX_LENGTH: int = 20
+    STORAGE_PROVIDER: str = "s3"
+
     model_config = SettingsConfigDict(
         env_prefix="ATLAS_",
         env_file=".env",

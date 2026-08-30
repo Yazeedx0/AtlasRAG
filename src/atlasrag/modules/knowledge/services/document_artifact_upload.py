@@ -26,19 +26,6 @@ from atlasrag.contracts.error.document_errors import (
 from atlasrag.contracts.object_storage import ObjectStorage
 from atlasrag.contracts.types.authorization_types import DocumentVersionStatus
 
-_ALLOWED_CONTENT_TYPES = frozenset(
-    {
-        "application/pdf",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "text/html",
-        "text/markdown",
-        "text/plain",
-    }
-)
-_ARTIFACT_KEY_MAX_LENGTH = 255
-_LANGUAGE_CODE_MAX_LENGTH = 20
-_STORAGE_PROVIDER = "s3"
-
 logger = logging.getLogger(__name__)
 
 
@@ -50,26 +37,42 @@ class DocumentArtifactUploadService:
         object_storage: ObjectStorage,
         max_file_size_bytes: int,
         accepted_language_codes: Collection[str],
+        allowed_content_types: Collection[str],
+        artifact_key_max_length: int,
+        language_code_max_length: int,
+        storage_provider: str,
         artifact_id_factory: Callable[[], UUID] | None = None,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
         if max_file_size_bytes <= 0:
             raise ValueError("max_file_size_bytes must be greater than zero")
+        if not allowed_content_types:
+            raise ValueError("allowed_content_types must not be empty")
+        if artifact_key_max_length <= 0:
+            raise ValueError("artifact_key_max_length must be greater than zero")
+        if language_code_max_length <= 0:
+            raise ValueError("language_code_max_length must be greater than zero")
+        if not storage_provider.strip():
+            raise ValueError("storage_provider must not be empty")
         accepted_languages = frozenset(accepted_language_codes)
         if not accepted_languages:
             raise ValueError("accepted_language_codes must not be empty")
         if any(
-            not language_code.strip() or len(language_code) > _LANGUAGE_CODE_MAX_LENGTH
+            not language_code.strip() or len(language_code) > language_code_max_length
             for language_code in accepted_languages
         ):
             raise ValueError(
-                "accepted_language_codes must contain non-empty codes of at most 20 characters"
+                "accepted_language_codes must contain non-empty codes within the configured length"
             )
 
         self._uow_factory = uow_factory
         self._object_storage = object_storage
         self._max_file_size_bytes = max_file_size_bytes
         self._accepted_language_codes = accepted_languages
+        self._allowed_content_types = frozenset(allowed_content_types)
+        self._artifact_key_max_length = artifact_key_max_length
+        self._language_code_max_length = language_code_max_length
+        self._storage_provider = storage_provider
         self._artifact_id_factory = artifact_id_factory or uuid4
         self._clock = clock or (lambda: datetime.now(UTC))
 
@@ -102,11 +105,11 @@ class DocumentArtifactUploadService:
                         artifact_key=command.artifact_key,
                     )
                 if await uow.document_artifacts.storage_key_exists(
-                    storage_provider=_STORAGE_PROVIDER,
+                    storage_provider=self._storage_provider,
                     storage_key=storage_key,
                 ):
                     raise DocumentArtifactStorageLocationConflict(
-                        storage_provider=_STORAGE_PROVIDER,
+                        storage_provider=self._storage_provider,
                         storage_key=storage_key,
                     )
 
@@ -129,7 +132,7 @@ class DocumentArtifactUploadService:
                         source_name=command.source_name,
                         source_uri=command.source_uri,
                         source_updated_at=command.source_updated_at,
-                        storage_provider=_STORAGE_PROVIDER,
+                        storage_provider=self._storage_provider,
                         storage_key=storage_key,
                         mime_type=command.content_type,
                         file_hash=file_hash,
@@ -187,11 +190,16 @@ class DocumentArtifactUploadService:
             )
 
     def _validate_file(self, command: UploadDocumentArtifact) -> None:
-        if not command.artifact_key.strip() or len(command.artifact_key) > _ARTIFACT_KEY_MAX_LENGTH:
+        if (
+            not command.artifact_key.strip()
+            or len(command.artifact_key) > self._artifact_key_max_length
+        ):
             raise DocumentArtifactKeyInvalid(artifact_key=command.artifact_key)
+        if len(command.language_code) > self._language_code_max_length:
+            raise DocumentArtifactLanguageCodeInvalid(language_code=command.language_code)
         if command.language_code not in self._accepted_language_codes:
             raise DocumentArtifactLanguageCodeInvalid(language_code=command.language_code)
-        if command.content_type not in _ALLOWED_CONTENT_TYPES:
+        if command.content_type not in self._allowed_content_types:
             raise DocumentArtifactContentTypeInvalid(content_type=command.content_type)
         if not command.content:
             raise DocumentArtifactEmpty()

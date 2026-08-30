@@ -8,15 +8,13 @@ one ``include_router`` call below.
 
 from fastapi import APIRouter
 
-from apps.api.routes import authentication
+from apps.api.routes import health
+from apps.api.routes.iam import authentication
 
-api_router = APIRouter(prefix="/api/v1")
-api_router.include_router(authentication.router)
+api_router = APIRouter()
+api_router.include_router(health.router)
 
-# Feature routers are registered here, e.g.:
-#
-#     from apps.api.routes import documents
-#     api_router.include_router(documents.router)
-#
-# with `documents.router = APIRouter(prefix="/documents", tags=["documents"])`,
-# which resolves to /api/v1/documents.
+versioned_api_router = APIRouter(prefix="/api/v1")
+versioned_api_router.include_router(authentication.router)
+api_router.include_router(versioned_api_router)
+

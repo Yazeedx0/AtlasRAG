@@ -40,8 +40,8 @@ docker-down-v: ## Stop the dev stack and delete volumes (destroys data)
 logs: ## Tail the dev stack logs
 	$(COMPOSE) logs -f
 
-.PHONY: api
-api: ## Run the API locally with reload
+.PHONY: run-dev
+run-dev: ## Run the API locally with reload
 	uv run uvicorn apps.api.main:app --reload
 
 .PHONY: worker

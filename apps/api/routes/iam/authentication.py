@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, status
 
 from apps.api.dependencies.authentication import get_authenticated_identity
 from apps.api.dependencies.identity import get_local_principal_id
-from apps.api.schemas import AuthenticatedUserResponse
+from apps.api.schemas.iam.authentication import AuthenticatedUserResponse
 from atlasrag.contracts.authentication import AuthenticatedIdentity
 
 router = APIRouter(prefix="/auth", tags=["authentication"])

@@ -16,6 +16,7 @@ from atlasrag.modules.identity.repositories.unit_of_work import (
     make_identity_unit_of_work_factory,
 )
 from atlasrag.modules.identity.services.identity_resolver import IdentityResolver
+from atlasrag.modules.identity.services.principal_lifecycle import PrincipalLifecycle
 from atlasrag.platform.database.session import async_session_factory, get_db_session
 
 DatabaseSession = Annotated[AsyncSession, Depends(get_db_session)]
@@ -27,6 +28,12 @@ async def get_identity_resolver(session: DatabaseSession) -> IdentityResolver:
         repository=SqlAlchemyIdentityRepository(session),
         uow_factory=make_identity_unit_of_work_factory(async_session_factory),
         policy=ConfiguredProvisioningPolicy(settings.IDENTITY_JIT_ENABLED),
+    )
+
+
+def get_principal_lifecycle() -> PrincipalLifecycle:
+    return PrincipalLifecycle(
+        make_identity_unit_of_work_factory(async_session_factory),
     )
 
 

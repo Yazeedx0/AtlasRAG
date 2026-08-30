@@ -1,20 +1,21 @@
-"""Aggregate router for the versioned API surface.
+"""Aggregate router for the application API surface.
 
-The version prefix lives here and nowhere else; each feature router under
-``routes/`` declares its own resource prefix and tags. That keeps a version bump a
-one-line change, while adding an endpoint group touches only its own module plus
-one ``include_router`` call below.
+Health probes remain unversioned, while application features are grouped below the
+versioned API prefix.
 """
 
 from fastapi import APIRouter
 
+from apps.api.utilities.exception_handlers import register_exception_handlers
 from apps.api.routes import health
-from apps.api.routes.iam import authentication
+from apps.api.routes.iam import authentication, principals
 
 api_router = APIRouter()
 api_router.include_router(health.router)
 
 versioned_api_router = APIRouter(prefix="/api/v1")
 versioned_api_router.include_router(authentication.router)
+versioned_api_router.include_router(principals.router)
 api_router.include_router(versioned_api_router)
 
+__all__ = ["api_router", "register_exception_handlers"]

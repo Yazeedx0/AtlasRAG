@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy import exists, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from atlasrag.platform.database.models import Role, UserRole, Users
+from atlasrag.modules.identity.models import Role, UserRole, Users
 
 
 class SqlAlchemyRoleAssignmentRepository:

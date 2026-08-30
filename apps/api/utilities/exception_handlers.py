@@ -6,7 +6,17 @@ from atlasrag.contracts.error.document_errors import (
     DocumentAclGrantConflict,
     DocumentAclGrantNotFound,
     DocumentAclPrincipalNotFound,
+    DocumentArtifactConflict,
+    DocumentArtifactContentTypeInvalid,
+    DocumentArtifactEmpty,
+    DocumentArtifactKeyInvalid,
+    DocumentArtifactLanguageCodeInvalid,
+    DocumentArtifactNotFound,
+    DocumentArtifactStorageLocationConflict,
+    DocumentArtifactTooLarge,
+    DocumentArtifactVersionNotDraft,
     DocumentCanonicalKeyConflict,
+    DocumentDeleted,
     DocumentNotFound,
     DocumentVersionConflict,
     DocumentVersionDocumentNotFound,
@@ -73,10 +83,21 @@ async def handle_document_validation_error(
     )
 
 
+async def handle_payload_too_large(
+    request: Request,
+    error: Exception,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+        content={"detail": str(error)},
+    )
+
+
 def register_exception_handlers(application: FastAPI) -> None:
     for error_type in (
         DocumentAclGrantNotFound,
         DocumentAclPrincipalNotFound,
+        DocumentArtifactNotFound,
         DocumentNotFound,
         DocumentVersionDocumentNotFound,
         DocumentVersionNotFound,
@@ -92,13 +113,21 @@ def register_exception_handlers(application: FastAPI) -> None:
         application.add_exception_handler(error_type, handle_not_found)
     for error_type in (
         DocumentAclExpirationInvalid,
+        DocumentArtifactContentTypeInvalid,
+        DocumentArtifactEmpty,
+        DocumentArtifactKeyInvalid,
+        DocumentArtifactLanguageCodeInvalid,
         DocumentVersionInvalidEffectiveRange,
         DocumentVersionInvalidTransition,
     ):
         application.add_exception_handler(error_type, handle_document_validation_error)
     for error_type in (
         DocumentAclGrantConflict,
+        DocumentArtifactConflict,
+        DocumentArtifactStorageLocationConflict,
+        DocumentArtifactVersionNotDraft,
         DocumentCanonicalKeyConflict,
+        DocumentDeleted,
         DocumentVersionConflict,
         DocumentVersionOverlap,
         GroupCycleDetected,
@@ -117,3 +146,7 @@ def register_exception_handlers(application: FastAPI) -> None:
         RoleAssignmentConflict,
     ):
         application.add_exception_handler(error_type, handle_conflict)
+    application.add_exception_handler(
+        DocumentArtifactTooLarge,
+        handle_payload_too_large,
+    )

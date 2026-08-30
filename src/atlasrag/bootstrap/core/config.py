@@ -1,7 +1,7 @@
 from enum import Enum
 from functools import lru_cache
 
-from pydantic import AnyHttpUrl, PostgresDsn
+from pydantic import AnyHttpUrl, Field, PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -56,9 +56,11 @@ class Settings(BaseSettings):
             "text/plain",
         }
     )
-    ARTIFACT_KEY_MAX_LENGTH: int = 255
-    LANGUAGE_CODE_MAX_LENGTH: int = 20
-    STORAGE_PROVIDER: str = "s3"
+    ACCEPTED_LANGUAGE_CODES: frozenset[str] = frozenset({"ar", "en"})
+    ARTIFACT_KEY_MAX_LENGTH: int = Field(default=255, gt=0)
+    LANGUAGE_CODE_MAX_LENGTH: int = Field(default=20, gt=0)
+    MAX_FILE_SIZE_BYTES: int = Field(default=50 * 1024 * 1024, gt=0)
+    STORAGE_PROVIDER: str = Field(default="s3", min_length=1)
 
     model_config = SettingsConfigDict(
         env_prefix="ATLAS_",

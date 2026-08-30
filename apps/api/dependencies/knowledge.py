@@ -1,8 +1,12 @@
 from collections.abc import Callable
 from types import TracebackType
+from typing import Annotated
 
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from apps.api.dependencies.storage import get_object_storage
+from atlasrag.bootstrap.core.config import get_settings
 from atlasrag.contracts.documents import (
     DocumentAclRepository as DocumentAclRepositoryContract,
     DocumentArtifactRepository as DocumentArtifactRepositoryContract,
@@ -10,6 +14,7 @@ from atlasrag.contracts.documents import (
     DocumentVersionRepository as DocumentVersionRepositoryContract,
 )
 from atlasrag.contracts.identity import PrincipalRepository as PrincipalRepositoryContract
+from atlasrag.contracts.object_storage import ObjectStorage
 from atlasrag.modules.identity.repositories.principal import PrincipalRepository
 from atlasrag.modules.knowledge.repositories.document_acl import (
     DocumentAclRepository,
@@ -25,6 +30,9 @@ from atlasrag.modules.knowledge.repositories.document_version import (
 )
 from atlasrag.modules.knowledge.services.document_acl_management import (
     DocumentAclManagementService,
+)
+from atlasrag.modules.knowledge.services.document_artifact_upload import (
+    DocumentArtifactUploadService,
 )
 from atlasrag.modules.knowledge.services.document_management import (
     DocumentManagementService,
@@ -106,8 +114,30 @@ def get_document_version_management_service() -> DocumentVersionManagementServic
     )
 
 
+def get_document_artifact_upload_service(
+    object_storage: Annotated[ObjectStorage, Depends(get_object_storage)],
+) -> DocumentArtifactUploadService:
+    settings = get_settings()
+    return DocumentArtifactUploadService(
+        make_knowledge_unit_of_work_factory(async_session_factory),
+        object_storage=object_storage,
+        max_file_size_bytes=settings.MAX_FILE_SIZE_BYTES,
+        accepted_language_codes=settings.ACCEPTED_LANGUAGE_CODES,
+        allowed_content_types=settings.ALLOWED_CONTENT_TYPES,
+        artifact_key_max_length=settings.ARTIFACT_KEY_MAX_LENGTH,
+        language_code_max_length=settings.LANGUAGE_CODE_MAX_LENGTH,
+        storage_provider=settings.STORAGE_PROVIDER,
+    )
+
+
+def get_document_artifact_max_file_size_bytes() -> int:
+    return get_settings().MAX_FILE_SIZE_BYTES
+
+
 __all__ = [
     "get_document_acl_management_service",
+    "get_document_artifact_max_file_size_bytes",
+    "get_document_artifact_upload_service",
     "get_document_management_service",
     "get_document_version_management_service",
     "make_knowledge_unit_of_work_factory",

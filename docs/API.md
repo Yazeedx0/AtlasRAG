@@ -54,6 +54,7 @@ by active document ACL grants.
 | Documents | `POST` | `/api/v1/documents` | `knowledge.documents.manage` |
 | Documents | `PATCH` | `/api/v1/documents/{document_id}` | `knowledge.documents.manage` |
 | Documents | `DELETE` | `/api/v1/documents/{document_id}` | `knowledge.documents.manage` |
+| Document artifacts | `POST` | `/api/v1/documents/{document_id}/versions/{version_id}/artifacts` | `knowledge.documents.manage` |
 | Document ACL | `GET` | `/api/v1/documents/{document_id}/acl` | `knowledge.document_acl.manage` |
 | Document ACL | `POST` | `/api/v1/documents/{document_id}/acl` | `knowledge.document_acl.manage` |
 | Document ACL | `DELETE` | `/api/v1/documents/{document_id}/acl/{grant_id}` | `knowledge.document_acl.manage` |
@@ -291,6 +292,38 @@ be set to `null`.
 Requires `knowledge.documents.manage`. Soft-deletes a document and returns `204 No Content`.
 The document and its history remain stored, but the document is no longer active.
 
+## Document artifacts
+
+### `POST /api/v1/documents/{document_id}/versions/{version_id}/artifacts`
+
+Requires `knowledge.documents.manage`. Uploads an artifact to a draft document version and returns
+`201 Created`. The request uses `multipart/form-data`:
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `artifact_key` | string | Yes | Unique key within the document version. |
+| `language_code` | string | Yes | Accepted artifact language code (`ar` or `en` by default). |
+| `file` | file | Yes | PDF, plain text, Markdown, HTML, or DOCX file. |
+| `source_uri` | string | No | Optional source URI metadata. |
+| `source_updated_at` | datetime | No | Optional timezone-aware source update timestamp. |
+
+The server generates the artifact ID and storage key, calculates the SHA-256 hash, and records the
+file size. The default maximum file size is `50 MiB` (`ATLAS_MAX_FILE_SIZE_BYTES`).
+
+Example response:
+
+```json
+{
+  "artifact_id": "1a91e5b8-2a9a-40fc-94f3-aec8e06b7f6a",
+  "document_version_id": "7a7b55e7-ec92-4c3d-83d7-4bd5d85f7a76",
+  "artifact_key": "primary-source",
+  "language_code": "en",
+  "mime_type": "application/pdf",
+  "file_hash": "ee87...",
+  "file_size_bytes": 1024
+}
+```
+
 ## Document ACL
 
 Document ACL permissions are `read` and `manage`. An ACL grant is temporal and allow-only.
@@ -360,5 +393,6 @@ Error responses use a JSON `detail` field:
 | `403 Forbidden` | The caller lacks the required capability, or the token cannot resolve to usable local access. |
 | `404 Not Found` | A requested document, ACL grant, principal, role assignment, membership, or permission does not exist. |
 | `409 Conflict` | An operation violates an active-state or integrity rule, such as a duplicate grant, duplicate membership, group cycle, or protected superadmin operation. |
+| `413 Content Too Large` | An uploaded artifact exceeds `ATLAS_MAX_FILE_SIZE_BYTES`. |
 | `422 Unprocessable Content` | Request validation failed, or an ACL expiration is not later than its grant time. |
 | `503 Service Unavailable` | A readiness check failed. |

@@ -8,6 +8,12 @@ from atlasrag.contracts.document_errors import (
     DocumentAclPrincipalNotFound,
     DocumentCanonicalKeyConflict,
     DocumentNotFound,
+    DocumentVersionConflict,
+    DocumentVersionDocumentNotFound,
+    DocumentVersionInvalidEffectiveRange,
+    DocumentVersionInvalidTransition,
+    DocumentVersionNotFound,
+    DocumentVersionOverlap,
 )
 from atlasrag.contracts.identity_errors import (
     GroupCycleDetected,
@@ -72,6 +78,8 @@ def register_exception_handlers(application: FastAPI) -> None:
         DocumentAclGrantNotFound,
         DocumentAclPrincipalNotFound,
         DocumentNotFound,
+        DocumentVersionDocumentNotFound,
+        DocumentVersionNotFound,
         GroupMembershipNotFound,
         PermissionGrantNotFound,
         PermissionNotFound,
@@ -82,13 +90,17 @@ def register_exception_handlers(application: FastAPI) -> None:
         RoleAssignmentUserNotFound,
     ):
         application.add_exception_handler(error_type, handle_not_found)
-    application.add_exception_handler(
+    for error_type in (
         DocumentAclExpirationInvalid,
-        handle_document_validation_error,
-    )
+        DocumentVersionInvalidEffectiveRange,
+        DocumentVersionInvalidTransition,
+    ):
+        application.add_exception_handler(error_type, handle_document_validation_error)
     for error_type in (
         DocumentAclGrantConflict,
         DocumentCanonicalKeyConflict,
+        DocumentVersionConflict,
+        DocumentVersionOverlap,
         GroupCycleDetected,
         GroupMemberTypeNotAllowed,
         GroupMembershipAlreadyExists,

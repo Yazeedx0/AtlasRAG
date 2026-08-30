@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from atlasrag.contracts.authorization_types import DocumentPermission
+from atlasrag.contracts.authorization_types import DocumentPermission, DocumentVersionStatus
 
 
 class DocumentError(Exception):
@@ -57,6 +57,64 @@ class DocumentAclExpirationInvalid(DocumentError):
         super().__init__("document ACL expiry must be later than the grant time")
 
 
+class DocumentVersionNotFound(DocumentError):
+    def __init__(self, *, document_id: UUID, version_id: UUID) -> None:
+        self.document_id = document_id
+        self.version_id = version_id
+        super().__init__(f"document version {version_id} not found for document {document_id}")
+
+
+class DocumentVersionConflict(DocumentError):
+    def __init__(self, *, document_id: UUID, version_label: str) -> None:
+        self.document_id = document_id
+        self.version_label = version_label
+        super().__init__(
+            f"document version label {version_label!r} already exists for document {document_id}"
+        )
+
+
+class DocumentVersionInvalidTransition(DocumentError):
+    def __init__(
+        self,
+        *,
+        document_id: UUID,
+        version_id: UUID,
+        current_status: DocumentVersionStatus,
+        target_status: DocumentVersionStatus,
+    ) -> None:
+        self.document_id = document_id
+        self.version_id = version_id
+        self.current_status = current_status
+        self.target_status = target_status
+        super().__init__(
+            f"document version {version_id} cannot transition from "
+            f"{current_status.value} to {target_status.value}"
+        )
+
+
+class DocumentVersionOverlap(DocumentError):
+    def __init__(self, *, document_id: UUID, version_id: UUID) -> None:
+        self.document_id = document_id
+        self.version_id = version_id
+        super().__init__(
+            f"document version {version_id} overlaps another effective version "
+            f"for document {document_id}"
+        )
+
+
+class DocumentVersionInvalidEffectiveRange(DocumentError):
+    def __init__(self, *, effective_from: datetime, effective_to: datetime | None) -> None:
+        self.effective_from = effective_from
+        self.effective_to = effective_to
+        super().__init__("document version effective_to must be later than effective_from")
+
+
+class DocumentVersionDocumentNotFound(DocumentError):
+    def __init__(self, *, document_id: UUID) -> None:
+        self.document_id = document_id
+        super().__init__(f"document {document_id} not found")
+
+
 __all__ = [
     "DocumentAclExpirationInvalid",
     "DocumentAclGrantConflict",
@@ -65,4 +123,10 @@ __all__ = [
     "DocumentCanonicalKeyConflict",
     "DocumentError",
     "DocumentNotFound",
+    "DocumentVersionConflict",
+    "DocumentVersionDocumentNotFound",
+    "DocumentVersionInvalidEffectiveRange",
+    "DocumentVersionInvalidTransition",
+    "DocumentVersionNotFound",
+    "DocumentVersionOverlap",
 ]

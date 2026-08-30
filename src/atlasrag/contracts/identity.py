@@ -5,7 +5,11 @@ from typing import Protocol
 from uuid import UUID
 
 from atlasrag.contracts.authentication import AuthenticatedIdentity
-from atlasrag.contracts.identity_types import LocalUserIdentity, PrincipalState
+from atlasrag.contracts.identity_types import (
+    AssignedRole,
+    LocalUserIdentity,
+    PrincipalState,
+)
 from atlasrag.contracts.permission_authorization import (
     PermissionRepository,
     SuperadminRepository,
@@ -96,6 +100,12 @@ class UserIdentifierRepository(Protocol):
 
 
 class RoleAssignmentRepository(Protocol):
+    async def list_active_for_user(
+        self,
+        user_principal_id: UUID,
+    ) -> tuple[AssignedRole, ...]:
+        ...
+
     async def user_exists(self, user_principal_id: UUID) -> bool:
         ...
 

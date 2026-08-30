@@ -5,6 +5,7 @@ from uuid import UUID
 from sqlalchemy.exc import IntegrityError
 
 from atlasrag.contracts.identity import RoleAssignmentUnitOfWork
+from atlasrag.contracts.identity_types import AssignedRole
 from atlasrag.modules.identity.helpers.errors import (
     RoleAssignmentConflict,
     RoleAssignmentNotFound,
@@ -23,6 +24,20 @@ class RoleAssignmentService:
     ) -> None:
         self._uow_factory = uow_factory
         self._clock = clock or (lambda: datetime.now(UTC))
+
+    async def list_roles(
+        self,
+        *,
+        user_principal_id: UUID,
+    ) -> tuple[AssignedRole, ...]:
+        async with self._uow_factory() as uow:
+            await self._ensure_user_exists(
+                uow,
+                user_principal_id=user_principal_id,
+            )
+            return await uow.role_assignments.list_active_for_user(
+                user_principal_id,
+            )
 
     async def assign_role(
         self,
@@ -110,7 +125,18 @@ class RoleAssignmentService:
         user_principal_id: UUID,
         role_principal_id: UUID,
     ) -> None:
-        if not await uow.role_assignments.user_exists(user_principal_id):
-            raise RoleAssignmentUserNotFound(user_principal_id=user_principal_id)
+        await RoleAssignmentService._ensure_user_exists(
+            uow,
+            user_principal_id=user_principal_id,
+        )
         if not await uow.role_assignments.role_exists(role_principal_id):
             raise RoleAssignmentRoleNotFound(role_principal_id=role_principal_id)
+
+    @staticmethod
+    async def _ensure_user_exists(
+        uow: RoleAssignmentUnitOfWork,
+        *,
+        user_principal_id: UUID,
+    ) -> None:
+        if not await uow.role_assignments.user_exists(user_principal_id):
+            raise RoleAssignmentUserNotFound(user_principal_id=user_principal_id)

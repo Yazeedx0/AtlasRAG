@@ -5,6 +5,10 @@ from atlasrag.contracts.identity_errors import (
     PrincipalInactive,
     PrincipalNotFound,
     PrincipalRetired,
+    RoleAssignmentConflict,
+    RoleAssignmentNotFound,
+    RoleAssignmentRoleNotFound,
+    RoleAssignmentUserNotFound,
 )
 from atlasrag.contracts.permission_errors import (
     LastSuperadminViolation,
@@ -33,14 +37,18 @@ async def handle_principal_conflict(
 
 
 def register_exception_handlers(application: FastAPI) -> None:
-    application.add_exception_handler(
+    for error_type in (
         PrincipalNotFound,
-        handle_principal_not_found,
-    )
+        RoleAssignmentNotFound,
+        RoleAssignmentRoleNotFound,
+        RoleAssignmentUserNotFound,
+    ):
+        application.add_exception_handler(error_type, handle_principal_not_found)
     for error_type in (
         LastSuperadminViolation,
         PrincipalInactive,
         PrincipalRetired,
         ProtectedSuperadminRole,
+        RoleAssignmentConflict,
     ):
         application.add_exception_handler(error_type, handle_principal_conflict)

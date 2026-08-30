@@ -18,4 +18,14 @@ class PrincipalState:
     type: str | None = None
 
 
-__all__ = ["LocalUserIdentity", "PrincipalState"]
+@dataclass(frozen=True, slots=True)
+class AssignedRole:
+    role_principal_id: UUID
+    role_key: str
+    name: str
+    description: str | None
+    assigned_at: datetime
+    assigned_by_principal_id: UUID | None
+
+
+__all__ = ["AssignedRole", "LocalUserIdentity", "PrincipalState"]

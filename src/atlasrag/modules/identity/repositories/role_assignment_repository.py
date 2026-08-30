@@ -4,12 +4,46 @@ from datetime import datetime
 from sqlalchemy import exists, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from atlasrag.contracts.identity_types import AssignedRole
 from atlasrag.modules.identity.models import Role, UserRole, Users
 
 
 class SqlAlchemyRoleAssignmentRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
+
+    async def list_active_for_user(
+        self,
+        user_principal_id: uuid.UUID,
+    ) -> tuple[AssignedRole, ...]:
+        statement = (
+            select(
+                Role.principal_id,
+                Role.role_key,
+                Role.name,
+                Role.description,
+                UserRole.assigned_at,
+                UserRole.assigned_by_principal_id,
+            )
+            .join(UserRole, UserRole.role_principal_id == Role.principal_id)
+            .where(
+                UserRole.user_principal_id == user_principal_id,
+                UserRole.revoked_at.is_(None),
+            )
+            .order_by(Role.role_key)
+        )
+        rows = (await self._session.execute(statement)).all()
+        return tuple(
+            AssignedRole(
+                role_principal_id=row.principal_id,
+                role_key=row.role_key,
+                name=row.name,
+                description=row.description,
+                assigned_at=row.assigned_at,
+                assigned_by_principal_id=row.assigned_by_principal_id,
+            )
+            for row in rows
+        )
 
     async def user_exists(self, user_principal_id: uuid.UUID) -> bool:
         statement = select(

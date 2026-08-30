@@ -17,6 +17,7 @@ from atlasrag.modules.identity.repositories.unit_of_work import (
 )
 from atlasrag.modules.identity.services.identity_resolver import IdentityResolver
 from atlasrag.modules.identity.services.principal_lifecycle import PrincipalLifecycle
+from atlasrag.modules.identity.services.role_assignment import RoleAssignmentService
 from atlasrag.platform.database.session import async_session_factory, get_db_session
 
 DatabaseSession = Annotated[AsyncSession, Depends(get_db_session)]
@@ -33,6 +34,12 @@ async def get_identity_resolver(session: DatabaseSession) -> IdentityResolver:
 
 def get_principal_lifecycle() -> PrincipalLifecycle:
     return PrincipalLifecycle(
+        make_identity_unit_of_work_factory(async_session_factory),
+    )
+
+
+def get_role_assignment_service() -> RoleAssignmentService:
+    return RoleAssignmentService(
         make_identity_unit_of_work_factory(async_session_factory),
     )
 

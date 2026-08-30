@@ -4,6 +4,7 @@ from sqlalchemy import Enum as SqlEnum
 
 from atlasrag.contracts.identity import IdentifierType
 
+
 class PrincipalType(Enum):
 
     USER = "user"

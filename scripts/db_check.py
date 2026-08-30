@@ -2,7 +2,7 @@ import asyncio
 import sys
 
 from sqlalchemy import text
-from src.atlasrag.platform.database.engine import get_engine 
+from src.atlasrag.platform.database.engine import get_engine
 
 REQUIRED_EXTENSIONS = ["vector", "btree_gist"]
 engine = get_engine()

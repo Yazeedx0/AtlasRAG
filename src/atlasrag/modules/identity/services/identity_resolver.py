@@ -8,7 +8,6 @@ from atlasrag.contracts.identity import (
     ProvisioningPolicy,
 )
 from atlasrag.contracts.identity_types import LocalUserIdentity
-
 from atlasrag.modules.identity.helpers.errors import (
     IdentityAlreadyProvisioned,
     IdentityProvisioningConflict,

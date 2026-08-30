@@ -1,8 +1,8 @@
 from enum import Enum
 from functools import lru_cache
+
 from pydantic import AnyHttpUrl, PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
 
 
 class Environment(Enum):

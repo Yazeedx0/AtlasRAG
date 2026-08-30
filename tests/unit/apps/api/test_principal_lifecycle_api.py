@@ -11,6 +11,7 @@ from apps.api.dependencies.identity import (
 from apps.api.dependencies.permissions import get_permission_authorization_service
 from apps.api.router import api_router
 from apps.api.utilities.exception_handlers import register_exception_handlers
+
 from atlasrag.contracts.identity_errors import (
     PrincipalNotFound,
     PrincipalRetired,

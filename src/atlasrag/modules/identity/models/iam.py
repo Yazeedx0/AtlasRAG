@@ -1,11 +1,5 @@
 import uuid
 from datetime import datetime
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
-
-from atlasrag.modules.identity.enums import PRINCIPAL_TYPE_DB_ENUM, PrincipalType
-from atlasrag.platform.database import Base
-
 
 from sqlalchemy import (
     Boolean,
@@ -14,6 +8,12 @@ from sqlalchemy import (
     func,
     true,
 )
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column
+
+from atlasrag.modules.identity.enums import PRINCIPAL_TYPE_DB_ENUM, PrincipalType
+from atlasrag.platform.database import Base
+
 
 class Principal(Base):
     __tablename__ = "principals"

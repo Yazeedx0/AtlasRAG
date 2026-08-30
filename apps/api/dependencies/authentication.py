@@ -8,6 +8,7 @@ from atlasrag.contracts.authentication import (
     TokenVerifier,
 )
 
+
 def _bearer_token(authorization: str | None) -> str:
     if authorization is None:
         raise HTTPException(

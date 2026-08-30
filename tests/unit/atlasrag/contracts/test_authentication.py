@@ -50,9 +50,18 @@ def test_authenticated_identity_optional_fields_default_to_none() -> None:
 
 
 def test_authenticated_identity_equality_is_by_value() -> None:
-    first = AuthenticatedIdentity(issuer="https://auth.example.com/realms/atlas", subject="user-123")
-    second = AuthenticatedIdentity(issuer="https://auth.example.com/realms/atlas", subject="user-123")
-    different = AuthenticatedIdentity(issuer="https://auth.example.com/realms/atlas", subject="user-456")
+    first = AuthenticatedIdentity(
+        issuer="https://auth.example.com/realms/atlas",
+        subject="user-123",
+    )
+    second = AuthenticatedIdentity(
+        issuer="https://auth.example.com/realms/atlas",
+        subject="user-123",
+    )
+    different = AuthenticatedIdentity(
+        issuer="https://auth.example.com/realms/atlas",
+        subject="user-456",
+    )
 
     assert first == second
     assert first != different
@@ -66,7 +75,10 @@ def test_token_verification_error_is_an_exception() -> None:
 def test_token_verifier_protocol_runtime_checkable_membership() -> None:
     class WorkingVerifier:
         async def verify(self, token: str) -> AuthenticatedIdentity:
-            return AuthenticatedIdentity(issuer="https://auth.example.com/realms/atlas", subject="user-123")
+            return AuthenticatedIdentity(
+                issuer="https://auth.example.com/realms/atlas",
+                subject="user-123",
+            )
 
     verifier: TokenVerifier = WorkingVerifier()
     assert hasattr(verifier, "verify")

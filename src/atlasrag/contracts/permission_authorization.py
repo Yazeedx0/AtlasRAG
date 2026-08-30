@@ -3,6 +3,10 @@ from datetime import datetime
 from typing import Protocol
 from uuid import UUID
 
+from atlasrag.contracts.identity_types import (
+    ActivePermissionGrant,
+    PermissionDefinitionState,
+)
 from atlasrag.contracts.permissions import Permission
 
 
@@ -26,6 +30,16 @@ class PermissionLookupRepository(Protocol):
 
 
 class PermissionRepository(PermissionLookupRepository, Protocol):
+    async def list_permissions(self) -> tuple[PermissionDefinitionState, ...]:
+        ...
+
+    async def list_active_for_principal(
+        self,
+        *,
+        principal_id: UUID,
+    ) -> tuple[ActivePermissionGrant, ...]:
+        ...
+
     async def permission_exists(self, permission: Permission) -> bool:
         ...
 

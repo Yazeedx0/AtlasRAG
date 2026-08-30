@@ -5,6 +5,10 @@ from uuid import UUID
 from sqlalchemy.exc import IntegrityError
 
 from atlasrag.contracts.identity import PermissionManagementUnitOfWork
+from atlasrag.contracts.identity_types import (
+    ActivePermissionGrant,
+    PermissionDefinitionState,
+)
 from atlasrag.contracts.permissions import Permission
 from atlasrag.modules.identity.helpers.errors import (
     PermissionGrantConflict,
@@ -27,6 +31,23 @@ class PermissionManagementService:
     ) -> None:
         self._uow_factory = uow_factory
         self._clock = clock or (lambda: datetime.now(UTC))
+
+    async def list_permissions(self) -> tuple[PermissionDefinitionState, ...]:
+        async with self._uow_factory() as uow:
+            return await uow.permissions.list_permissions()
+
+    async def list_principal_permissions(
+        self,
+        *,
+        principal_id: UUID,
+    ) -> tuple[ActivePermissionGrant, ...]:
+        async with self._uow_factory() as uow:
+            principal = await uow.principals.find_by_id(principal_id)
+            if principal is None:
+                raise PermissionTargetNotFound(principal_id=principal_id)
+            return await uow.permissions.list_active_for_principal(
+                principal_id=principal_id,
+            )
 
     async def grant_permission(
         self,

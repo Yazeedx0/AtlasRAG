@@ -19,6 +19,12 @@ from atlasrag.contracts.identity_errors import (
 )
 from atlasrag.contracts.permission_errors import (
     LastSuperadminViolation,
+    PermissionGrantConflict,
+    PermissionGrantNotFound,
+    PermissionNotFound,
+    PermissionTargetInactive,
+    PermissionTargetNotFound,
+    PermissionTargetRetired,
     ProtectedSuperadminRole,
 )
 
@@ -46,6 +52,9 @@ async def handle_principal_conflict(
 def register_exception_handlers(application: FastAPI) -> None:
     for error_type in (
         GroupMembershipNotFound,
+        PermissionGrantNotFound,
+        PermissionNotFound,
+        PermissionTargetNotFound,
         PrincipalNotFound,
         RoleAssignmentNotFound,
         RoleAssignmentRoleNotFound,
@@ -60,6 +69,9 @@ def register_exception_handlers(application: FastAPI) -> None:
         GroupSelfMembership,
         InvalidPrincipalType,
         LastSuperadminViolation,
+        PermissionGrantConflict,
+        PermissionTargetInactive,
+        PermissionTargetRetired,
         PrincipalInactive,
         PrincipalRetired,
         ProtectedSuperadminRole,

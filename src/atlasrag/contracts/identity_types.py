@@ -37,9 +37,25 @@ class DirectGroupMember:
     added_by_principal_id: UUID | None
 
 
+@dataclass(frozen=True, slots=True)
+class PermissionDefinitionState:
+    permission_key: str
+    description: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class ActivePermissionGrant:
+    permission_key: str
+    description: str | None
+    granted_at: datetime
+    granted_by_principal_id: UUID | None
+
+
 __all__ = [
+    "ActivePermissionGrant",
     "AssignedRole",
     "DirectGroupMember",
     "LocalUserIdentity",
+    "PermissionDefinitionState",
     "PrincipalState",
 ]

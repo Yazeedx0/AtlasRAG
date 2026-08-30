@@ -41,7 +41,7 @@ class DocumentACL(Base):
             "document_id",
             "principal_id",
             postgresql_where=text(
-                "revoked_at IS NULL AND permission IN ('read', 'manage')"
+                "revoked_at IS NULL AND permission = 'read'"
             ),
         ),
         {"schema": "knowledge"},

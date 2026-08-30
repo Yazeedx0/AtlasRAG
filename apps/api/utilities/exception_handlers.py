@@ -1,6 +1,14 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
+from atlasrag.contracts.document_errors import (
+    DocumentAclExpirationInvalid,
+    DocumentAclGrantConflict,
+    DocumentAclGrantNotFound,
+    DocumentAclPrincipalNotFound,
+    DocumentCanonicalKeyConflict,
+    DocumentNotFound,
+)
 from atlasrag.contracts.identity_errors import (
     GroupCycleDetected,
     GroupMemberTypeNotAllowed,
@@ -29,7 +37,7 @@ from atlasrag.contracts.permission_errors import (
 )
 
 
-async def handle_principal_not_found(
+async def handle_not_found(
     request: Request,
     error: Exception,
 ) -> JSONResponse:
@@ -39,7 +47,7 @@ async def handle_principal_not_found(
     )
 
 
-async def handle_principal_conflict(
+async def handle_conflict(
     request: Request,
     error: Exception,
 ) -> JSONResponse:
@@ -49,8 +57,21 @@ async def handle_principal_conflict(
     )
 
 
+async def handle_document_validation_error(
+    request: Request,
+    error: Exception,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+        content={"detail": str(error)},
+    )
+
+
 def register_exception_handlers(application: FastAPI) -> None:
     for error_type in (
+        DocumentAclGrantNotFound,
+        DocumentAclPrincipalNotFound,
+        DocumentNotFound,
         GroupMembershipNotFound,
         PermissionGrantNotFound,
         PermissionNotFound,
@@ -60,8 +81,14 @@ def register_exception_handlers(application: FastAPI) -> None:
         RoleAssignmentRoleNotFound,
         RoleAssignmentUserNotFound,
     ):
-        application.add_exception_handler(error_type, handle_principal_not_found)
+        application.add_exception_handler(error_type, handle_not_found)
+    application.add_exception_handler(
+        DocumentAclExpirationInvalid,
+        handle_document_validation_error,
+    )
     for error_type in (
+        DocumentAclGrantConflict,
+        DocumentCanonicalKeyConflict,
         GroupCycleDetected,
         GroupMemberTypeNotAllowed,
         GroupMembershipAlreadyExists,
@@ -77,4 +104,4 @@ def register_exception_handlers(application: FastAPI) -> None:
         ProtectedSuperadminRole,
         RoleAssignmentConflict,
     ):
-        application.add_exception_handler(error_type, handle_principal_conflict)
+        application.add_exception_handler(error_type, handle_conflict)

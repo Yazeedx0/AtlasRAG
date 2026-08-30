@@ -9,22 +9,9 @@ from atlasrag.contracts.identity_errors import IdentityAlreadyProvisioned
 from atlasrag.contracts.identity_types import LocalUserIdentity
 from atlasrag.modules.identity.enums import IdentifierType, PrincipalType
 from atlasrag.modules.identity.models import Principal, UserIdentifier, Users
+from atlasrag.platform.database.integrity import is_integrity_error_for_constraint
 
 _ACTIVE_IDENTITY_CONSTRAINT = "uq_user_identifiers_active_identity"
-
-
-def _is_active_identity_conflict(error: IntegrityError) -> bool:
-    orig = error.orig
-    constraint_name = getattr(orig, "constraint_name", None)
-    if constraint_name is None:
-        diagnostic = getattr(orig, "diag", None)
-        constraint_name = getattr(diagnostic, "constraint_name", None)
-
-    if constraint_name is not None:
-        return constraint_name == _ACTIVE_IDENTITY_CONSTRAINT
-
-    # Fallback for drivers that don't expose structured constraint info.
-    return _ACTIVE_IDENTITY_CONSTRAINT in str(orig)
 
 
 class SqlAlchemyIdentityRepository:
@@ -101,7 +88,10 @@ class SqlAlchemyIdentityRepository:
                 )
             )
         except IntegrityError as error:
-            if not _is_active_identity_conflict(error):
+            if not is_integrity_error_for_constraint(
+                error=error,
+                constraint_name=_ACTIVE_IDENTITY_CONSTRAINT,
+            ):
                 raise
             raise IdentityAlreadyProvisioned from error
 

@@ -6,7 +6,7 @@ from sqlalchemy import exists, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from atlasrag.contracts.authorization_types import DocumentPermission
-from atlasrag.modules.knowledge.models import DocumentACL
+from atlasrag.modules.knowledge.models import Document, DocumentACL
 
 
 class SqlAlchemyDocumentAccessRepository:
@@ -24,8 +24,12 @@ class SqlAlchemyDocumentAccessRepository:
             return False
 
         statement = select(
-            exists().where(
-                DocumentACL.document_id == document_id,
+            exists()
+            .select_from(DocumentACL)
+            .join(Document, Document.id == DocumentACL.document_id)
+            .where(
+                Document.id == document_id,
+                Document.deleted_at.is_(None),
                 DocumentACL.principal_id.in_(principal_ids),
                 DocumentACL.permission.in_(
                     (DocumentPermission.READ, DocumentPermission.MANAGE)

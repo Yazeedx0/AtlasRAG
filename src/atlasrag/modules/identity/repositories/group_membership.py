@@ -9,21 +9,9 @@ from atlasrag.contracts.identity_errors import GroupMembershipAlreadyExists
 from atlasrag.contracts.identity_types import DirectGroupMember
 from atlasrag.modules.identity.enums import PrincipalType
 from atlasrag.modules.identity.models import GroupMembership
+from atlasrag.platform.database.integrity import is_integrity_error_for_constraint
 
 _ACTIVE_MEMBERSHIP_CONSTRAINT = "uq_group_memberships_active_membership"
-
-
-def _is_active_membership_conflict(error: IntegrityError) -> bool:
-    orig = error.orig
-    constraint_name = getattr(orig, "constraint_name", None)
-    if constraint_name is None:
-        diagnostic = getattr(orig, "diag", None)
-        constraint_name = getattr(diagnostic, "constraint_name", None)
-
-    if constraint_name is not None:
-        return constraint_name == _ACTIVE_MEMBERSHIP_CONSTRAINT
-
-    return _ACTIVE_MEMBERSHIP_CONSTRAINT in str(orig)
 
 
 class SqlAlchemyGroupMembershipRepository:
@@ -126,7 +114,10 @@ class SqlAlchemyGroupMembershipRepository:
         try:
             await self._session.execute(statement)
         except IntegrityError as error:
-            if not _is_active_membership_conflict(error):
+            if not is_integrity_error_for_constraint(
+                error=error,
+                constraint_name=_ACTIVE_MEMBERSHIP_CONSTRAINT,
+            ):
                 raise
             raise GroupMembershipAlreadyExists(
                 group_id=group_principal_id,

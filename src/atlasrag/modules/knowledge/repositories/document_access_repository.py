@@ -6,7 +6,7 @@ from sqlalchemy import exists, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from atlasrag.contracts.authorization_types import DocumentPermission
-from atlasrag.platform.database.models import DocumentACL
+from atlasrag.modules.knowledge.models import DocumentACL
 
 
 class SqlAlchemyDocumentAccessRepository:

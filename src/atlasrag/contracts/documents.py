@@ -19,6 +19,8 @@ from atlasrag.contracts.types.document_types import (
     DocumentPatch,
     DocumentState,
     DocumentVersionState,
+    UploadDocumentArtifact,
+    UploadedDocumentArtifact,
 )
 
 
@@ -27,6 +29,14 @@ class DocumentRepository(Protocol):
         ...
 
     async def create(self, *, document: CreateDocument) -> DocumentState:
+        ...
+
+    async def find_by_id(
+        self,
+        *,
+        document_id: UUID,
+        lock: bool,
+    ) -> DocumentState | None:
         ...
 
     async def find_active_by_id(
@@ -195,6 +205,22 @@ class DocumentArtifactRepository(Protocol):
     ) -> DocumentArtifactState | None:
         ...
 
+    async def artifact_key_exists(
+        self,
+        *,
+        document_version_id: UUID,
+        artifact_key: str,
+    ) -> bool:
+        ...
+
+    async def storage_key_exists(
+        self,
+        *,
+        storage_provider: str,
+        storage_key: str,
+    ) -> bool:
+        ...
+
     async def list_for_version(
         self,
         *,
@@ -202,7 +228,7 @@ class DocumentArtifactRepository(Protocol):
     ) -> tuple[DocumentArtifactState, ...]:
         ...
 
-    async def create(self, *, artifact: CreateDocumentArtifact) -> DocumentArtifactState:
+    async def add(self, *, artifact: CreateDocumentArtifact) -> DocumentArtifactState:
         ...
 
     async def set_status(
@@ -256,4 +282,6 @@ __all__ = [
     "DocumentVersionRepository",
     "DocumentVersionState",
     "KnowledgeUnitOfWork",
+    "UploadDocumentArtifact",
+    "UploadedDocumentArtifact",
 ]

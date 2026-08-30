@@ -1,17 +1,18 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import insert, select, update
+from sqlalchemy import exists, insert, select, update
 from sqlalchemy.engine import Row
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import InstrumentedAttribute
 
-from atlasrag.contracts.types.authorization_types import DocumentArtifactStatus
+from atlasrag.contracts.documents import CreateDocumentArtifact, DocumentArtifactState
 from atlasrag.contracts.error.document_errors import (
     DocumentArtifactConflict,
     DocumentArtifactStorageLocationConflict,
 )
-from atlasrag.contracts.documents import CreateDocumentArtifact, DocumentArtifactState
+from atlasrag.contracts.types.authorization_types import DocumentArtifactStatus
 from atlasrag.modules.knowledge.models import DocumentArtifact
 from atlasrag.platform.database.integrity import is_integrity_error_for_constraint
 
@@ -52,6 +53,34 @@ class DocumentArtifactRepository:
         row = (await self._session.execute(statement)).one_or_none()
         return _to_artifact_state(row) if row is not None else None
 
+    async def artifact_key_exists(
+        self,
+        *,
+        document_version_id: UUID,
+        artifact_key: str,
+    ) -> bool:
+        statement = select(
+            exists().where(
+                DocumentArtifact.document_version_id == document_version_id,
+                DocumentArtifact.artifact_key == artifact_key,
+            )
+        )
+        return bool(await self._session.scalar(statement))
+
+    async def storage_key_exists(
+        self,
+        *,
+        storage_provider: str,
+        storage_key: str,
+    ) -> bool:
+        statement = select(
+            exists().where(
+                DocumentArtifact.storage_provider == storage_provider,
+                DocumentArtifact.storage_key == storage_key,
+            )
+        )
+        return bool(await self._session.scalar(statement))
+
     async def list_for_version(
         self,
         *,
@@ -65,7 +94,7 @@ class DocumentArtifactRepository:
         rows = (await self._session.execute(statement)).all()
         return tuple(_to_artifact_state(row) for row in rows)
 
-    async def create(self, *, artifact: CreateDocumentArtifact) -> DocumentArtifactState:
+    async def add(self, *, artifact: CreateDocumentArtifact) -> DocumentArtifactState:
         statement = insert(DocumentArtifact).values(
             id=artifact.artifact_id,
             document_version_id=artifact.document_version_id,

@@ -58,6 +58,18 @@ class DocumentRepository:
             raise
         return _to_document_state(row)
 
+    async def find_by_id(
+        self,
+        *,
+        document_id: UUID,
+        lock: bool,
+    ) -> DocumentState | None:
+        statement = select(*_document_columns()).where(Document.id == document_id)
+        if lock:
+            statement = statement.with_for_update()
+        row = (await self._session.execute(statement)).one_or_none()
+        return _to_document_state(row) if row is not None else None
+
     async def find_active_by_id(
         self,
         *,

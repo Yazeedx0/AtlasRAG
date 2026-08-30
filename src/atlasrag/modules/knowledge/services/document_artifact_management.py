@@ -76,7 +76,7 @@ class DocumentArtifactManagementService:
                     status=version.status,
                 )
 
-            created = await uow.document_artifacts.create(
+            created = await uow.document_artifacts.add(
                 artifact=CreateDocumentArtifact(
                     artifact_id=uuid4(),
                     document_version_id=document_version_id,

@@ -151,6 +151,30 @@ class CreateDocumentArtifact:
     created_at: datetime
 
 
+@dataclass(frozen=True, slots=True)
+class UploadDocumentArtifact:
+    document_id: UUID
+    document_version_id: UUID
+    artifact_key: str
+    language_code: str
+    source_name: str
+    source_uri: str | None
+    content_type: str
+    content: bytes
+    source_updated_at: datetime | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class UploadedDocumentArtifact:
+    artifact_id: UUID
+    document_version_id: UUID
+    artifact_key: str
+    language_code: str
+    mime_type: str
+    file_hash: str
+    file_size_bytes: int
+
+
 __all__ = [
     "CreateDocument",
     "CreateDocumentAclGrant",
@@ -162,4 +186,6 @@ __all__ = [
     "DocumentPatch",
     "DocumentState",
     "DocumentVersionState",
+    "UploadDocumentArtifact",
+    "UploadedDocumentArtifact",
 ]

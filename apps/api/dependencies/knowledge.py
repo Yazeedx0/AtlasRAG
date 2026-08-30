@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from atlasrag.contracts.documents import (
     DocumentAclRepository as DocumentAclRepositoryContract,
+    DocumentArtifactRepository as DocumentArtifactRepositoryContract,
     DocumentRepository as DocumentRepositoryContract,
     DocumentVersionRepository as DocumentVersionRepositoryContract,
 )
@@ -15,6 +16,9 @@ from atlasrag.modules.knowledge.repositories.document_acl import (
 )
 from atlasrag.modules.knowledge.repositories.document import (
     DocumentRepository,
+)
+from atlasrag.modules.knowledge.repositories.document_artifact import (
+    DocumentArtifactRepository,
 )
 from atlasrag.modules.knowledge.repositories.document_version import (
     DocumentVersionRepository,
@@ -35,6 +39,7 @@ class KnowledgeUnitOfWork:
     documents: DocumentRepositoryContract
     acl: DocumentAclRepositoryContract
     document_versions: DocumentVersionRepositoryContract
+    document_artifacts: DocumentArtifactRepositoryContract
     principals: PrincipalRepositoryContract
 
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
@@ -46,6 +51,7 @@ class KnowledgeUnitOfWork:
         self.documents = DocumentRepository(self._session)
         self.acl = DocumentAclRepository(self._session)
         self.document_versions = DocumentVersionRepository(self._session)
+        self.document_artifacts = DocumentArtifactRepository(self._session)
         self.principals = PrincipalRepository(self._session)
         return self
 

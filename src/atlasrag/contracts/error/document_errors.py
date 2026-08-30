@@ -18,6 +18,12 @@ class DocumentNotFound(DocumentError):
         super().__init__(f"document {document_id} not found")
 
 
+class DocumentDeleted(DocumentError):
+    def __init__(self, *, document_id: UUID) -> None:
+        self.document_id = document_id
+        super().__init__(f"document {document_id} is deleted")
+
+
 class DocumentCanonicalKeyConflict(DocumentError):
     def __init__(self, *, canonical_key: str) -> None:
         self.canonical_key = canonical_key
@@ -133,8 +139,44 @@ class DocumentArtifactConflict(DocumentError):
         self.document_version_id = document_version_id
         self.artifact_key = artifact_key
         super().__init__(
-            f"artifact key {artifact_key!r} already exists for document version {document_version_id}"
+            f"artifact key {artifact_key!r} already exists for "
+            f"document version {document_version_id}"
         )
+
+
+class DocumentArtifactEmpty(DocumentError):
+    def __init__(self) -> None:
+        super().__init__("document artifact content must not be empty")
+
+
+class DocumentArtifactTooLarge(DocumentError):
+    def __init__(self, *, file_size_bytes: int, max_file_size_bytes: int) -> None:
+        self.file_size_bytes = file_size_bytes
+        self.max_file_size_bytes = max_file_size_bytes
+        super().__init__(
+            f"document artifact size {file_size_bytes} exceeds the "
+            f"{max_file_size_bytes} byte limit"
+        )
+
+
+class DocumentArtifactKeyInvalid(DocumentError):
+    def __init__(self, *, artifact_key: str) -> None:
+        self.artifact_key = artifact_key
+        super().__init__(
+            "document artifact key must be non-empty after trimming and at most 255 characters"
+        )
+
+
+class DocumentArtifactLanguageCodeInvalid(DocumentError):
+    def __init__(self, *, language_code: str) -> None:
+        self.language_code = language_code
+        super().__init__(f"document artifact language code {language_code!r} is not accepted")
+
+
+class DocumentArtifactContentTypeInvalid(DocumentError):
+    def __init__(self, *, content_type: str) -> None:
+        self.content_type = content_type
+        super().__init__(f"document artifact content type {content_type!r} is not allowed")
 
 
 class DocumentArtifactStorageLocationConflict(DocumentError):
@@ -178,12 +220,18 @@ __all__ = [
     "DocumentAclGrantConflict",
     "DocumentAclGrantNotFound",
     "DocumentAclPrincipalNotFound",
+    "DocumentArtifactContentTypeInvalid",
     "DocumentArtifactConflict",
+    "DocumentArtifactEmpty",
     "DocumentArtifactInvalidTransition",
+    "DocumentArtifactKeyInvalid",
+    "DocumentArtifactLanguageCodeInvalid",
     "DocumentArtifactNotFound",
     "DocumentArtifactStorageLocationConflict",
+    "DocumentArtifactTooLarge",
     "DocumentArtifactVersionNotDraft",
     "DocumentCanonicalKeyConflict",
+    "DocumentDeleted",
     "DocumentError",
     "DocumentNotFound",
     "DocumentVersionConflict",

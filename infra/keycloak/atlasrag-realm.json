@@ -26,6 +26,40 @@
     },
 
     {
+      "clientId": "atlasrag-cli",
+      "name": "AtlasRAG Development CLI",
+      "enabled": true,
+      "protocol": "openid-connect",
+
+      "publicClient": true,
+      "bearerOnly": false,
+
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "authorizationServicesEnabled": false,
+
+      "redirectUris": [],
+      "webOrigins": [],
+
+      "protocolMappers": [
+        {
+          "name": "AtlasRAG API audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "atlasrag-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
+    },
+
+    {
       "clientId": "atlasrag-web",
       "name": "AtlasRAG Web BFF",
       "enabled": true,

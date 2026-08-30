@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from atlasrag.contracts.documents import (
     DocumentAclRepository as DocumentAclRepositoryContract,
     DocumentRepository as DocumentRepositoryContract,
+    DocumentVersionRepository as DocumentVersionRepositoryContract,
 )
 from atlasrag.contracts.identity import PrincipalRepository as PrincipalRepositoryContract
 from atlasrag.modules.identity.repositories.principal import PrincipalRepository
@@ -15,11 +16,17 @@ from atlasrag.modules.knowledge.repositories.document_acl import (
 from atlasrag.modules.knowledge.repositories.document import (
     DocumentRepository,
 )
+from atlasrag.modules.knowledge.repositories.document_version import (
+    DocumentVersionRepository,
+)
 from atlasrag.modules.knowledge.services.document_acl_management import (
     DocumentAclManagementService,
 )
 from atlasrag.modules.knowledge.services.document_management import (
     DocumentManagementService,
+)
+from atlasrag.modules.knowledge.services.document_version_management import (
+    DocumentVersionManagementService,
 )
 from atlasrag.platform.database.session import async_session_factory
 
@@ -27,6 +34,7 @@ from atlasrag.platform.database.session import async_session_factory
 class KnowledgeUnitOfWork:
     documents: DocumentRepositoryContract
     acl: DocumentAclRepositoryContract
+    document_versions: DocumentVersionRepositoryContract
     principals: PrincipalRepositoryContract
 
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
@@ -37,6 +45,7 @@ class KnowledgeUnitOfWork:
         self._session = self._session_factory()
         self.documents = DocumentRepository(self._session)
         self.acl = DocumentAclRepository(self._session)
+        self.document_versions = DocumentVersionRepository(self._session)
         self.principals = PrincipalRepository(self._session)
         return self
 
@@ -85,8 +94,15 @@ def get_document_acl_management_service() -> DocumentAclManagementService:
     )
 
 
+def get_document_version_management_service() -> DocumentVersionManagementService:
+    return DocumentVersionManagementService(
+        make_knowledge_unit_of_work_factory(async_session_factory),
+    )
+
+
 __all__ = [
     "get_document_acl_management_service",
     "get_document_management_service",
+    "get_document_version_management_service",
     "make_knowledge_unit_of_work_factory",
 ]

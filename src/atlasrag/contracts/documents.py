@@ -5,7 +5,7 @@ from types import TracebackType
 from typing import Protocol
 from uuid import UUID
 
-from atlasrag.contracts.authorization_types import DocumentPermission
+from atlasrag.contracts.authorization_types import DocumentPermission, DocumentVersionStatus
 from atlasrag.contracts.identity import PrincipalRepository
 
 
@@ -83,6 +83,31 @@ class CreateDocumentAclGrant:
     expires_at: datetime | None
 
 
+@dataclass(frozen=True, slots=True)
+class DocumentVersionState:
+    version_id: UUID
+    document_id: UUID
+    version_label: str
+    effective_from: datetime | None
+    effective_to: datetime | None
+    published_at: datetime | None
+    status: DocumentVersionStatus
+    created_by_principal_id: UUID | None
+    metadata: dict[str, object]
+    created_at: datetime
+    updated_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class CreateDocumentVersion:
+    version_id: UUID
+    document_id: UUID
+    version_label: str
+    created_by_principal_id: UUID | None
+    metadata: dict[str, object]
+    created_at: datetime
+
+
 class DocumentRepository(Protocol):
     async def canonical_key_exists(self, *, canonical_key: str) -> bool:
         ...
@@ -153,9 +178,95 @@ class DocumentAclRepository(Protocol):
         ...
 
 
+class DocumentVersionRepository(Protocol):
+    async def find_by_id(
+        self,
+        *,
+        document_id: UUID,
+        version_id: UUID,
+        lock: bool,
+    ) -> DocumentVersionState | None:
+        ...
+
+    async def find_by_document_and_label(
+        self,
+        *,
+        document_id: UUID,
+        version_label: str,
+    ) -> DocumentVersionState | None:
+        ...
+
+    async def list_for_document(
+        self,
+        *,
+        document_id: UUID,
+    ) -> tuple[DocumentVersionState, ...]:
+        ...
+
+    async def find_effective_at(
+        self,
+        *,
+        document_id: UUID,
+        at: datetime,
+    ) -> DocumentVersionState | None:
+        ...
+
+    async def find_open_effective_version(
+        self,
+        *,
+        document_id: UUID,
+        lock: bool,
+    ) -> DocumentVersionState | None:
+        ...
+
+    async def create(self, *, version: CreateDocumentVersion) -> DocumentVersionState:
+        ...
+
+    async def set_published(
+        self,
+        *,
+        document_id: UUID,
+        version_id: UUID,
+        published_at: datetime,
+        effective_from: datetime,
+        updated_at: datetime,
+    ) -> DocumentVersionState | None:
+        ...
+
+    async def close_effective_period(
+        self,
+        *,
+        document_id: UUID,
+        version_id: UUID,
+        effective_to: datetime,
+        updated_at: datetime,
+    ) -> None:
+        ...
+
+    async def set_withdrawn(
+        self,
+        *,
+        document_id: UUID,
+        version_id: UUID,
+        effective_to: datetime,
+        updated_at: datetime,
+    ) -> DocumentVersionState | None:
+        ...
+
+    async def set_archived(
+        self,
+        *,
+        document_id: UUID,
+        version_id: UUID,
+        updated_at: datetime,
+    ) -> DocumentVersionState | None:
+        ...
+
+
 class KnowledgeUnitOfWork(Protocol):
     documents: DocumentRepository
     acl: DocumentAclRepository
+    document_versions: DocumentVersionRepository
     principals: PrincipalRepository
 
     async def __aenter__(self) -> "KnowledgeUnitOfWork":
@@ -176,11 +287,14 @@ class KnowledgeUnitOfWork(Protocol):
 __all__ = [
     "CreateDocument",
     "CreateDocumentAclGrant",
+    "CreateDocumentVersion",
     "DocumentAclGrantState",
     "DocumentAclRepository",
     "DocumentField",
     "DocumentPatch",
     "DocumentRepository",
     "DocumentState",
+    "DocumentVersionRepository",
+    "DocumentVersionState",
     "KnowledgeUnitOfWork",
 ]

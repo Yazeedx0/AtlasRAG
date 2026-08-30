@@ -1,4 +1,4 @@
-from enum import StrEnum
+from enum import Enum, StrEnum
 
 
 class DocumentPermission(StrEnum):
@@ -6,4 +6,11 @@ class DocumentPermission(StrEnum):
     MANAGE = "manage"
 
 
-__all__ = ["DocumentPermission"]
+class DocumentVersionStatus(Enum):
+    DRAFT = "draft"
+    PUBLISHED = "published"
+    WITHDRAWN = "withdrawn"
+    ARCHIVED = "archived"
+
+
+__all__ = ["DocumentPermission", "DocumentVersionStatus"]

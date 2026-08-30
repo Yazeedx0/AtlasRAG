@@ -1,4 +1,4 @@
-from atlasrag.contracts.identity_errors import (
+from atlasrag.contracts.error.identity_errors import (
     GroupCycleDetected,
     GroupMemberTypeNotAllowed,
     GroupMembershipAlreadyExists,
@@ -23,7 +23,7 @@ from atlasrag.contracts.identity_errors import (
     RoleAssignmentRoleNotFound,
     RoleAssignmentUserNotFound,
 )
-from atlasrag.contracts.permission_errors import (
+from atlasrag.contracts.error.permission_errors import (
     LastSuperadminViolation,
     PermissionDenied,
     PermissionEngineError,

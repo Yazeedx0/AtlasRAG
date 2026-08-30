@@ -7,8 +7,8 @@ from apps.api.dependencies.knowledge import make_knowledge_unit_of_work_factory
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
-from atlasrag.contracts.authorization_types import DocumentVersionStatus
-from atlasrag.contracts.document_errors import (
+from atlasrag.contracts.types.authorization_types import DocumentVersionStatus
+from atlasrag.contracts.error.document_errors import (
     DocumentVersionConflict,
     DocumentVersionDocumentNotFound,
     DocumentVersionInvalidEffectiveRange,

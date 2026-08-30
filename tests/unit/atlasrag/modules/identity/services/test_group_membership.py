@@ -10,7 +10,7 @@ from atlasrag.contracts.identity import (
     GroupMembershipUnitOfWork,
     IdentityRepository,
 )
-from atlasrag.contracts.identity_types import PrincipalState
+from atlasrag.contracts.types.identity_types import PrincipalState
 from atlasrag.modules.identity.enums import PrincipalType
 from atlasrag.modules.identity.helpers.errors import (
     GroupCycleDetected,

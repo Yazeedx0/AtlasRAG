@@ -4,7 +4,7 @@ import pytest
 from apps.api.dependencies.permissions import require_permission
 from fastapi import HTTPException, status
 
-from atlasrag.contracts.permission_errors import PermissionDenied
+from atlasrag.contracts.error.permission_errors import PermissionDenied
 from atlasrag.contracts.permissions import Permission
 
 

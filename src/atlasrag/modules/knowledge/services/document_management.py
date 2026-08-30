@@ -2,7 +2,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from atlasrag.contracts.document_errors import (
+from atlasrag.contracts.error.document_errors import (
     DocumentCanonicalKeyConflict,
     DocumentNotFound,
 )

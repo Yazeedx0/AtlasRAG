@@ -7,8 +7,8 @@ from sqlalchemy.engine import Row
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from atlasrag.contracts.authorization_types import DocumentPermission
-from atlasrag.contracts.document_errors import DocumentAclGrantConflict
+from atlasrag.contracts.types.authorization_types import DocumentPermission
+from atlasrag.contracts.error.document_errors import DocumentAclGrantConflict
 from atlasrag.contracts.documents import CreateDocumentAclGrant, DocumentAclGrantState
 from atlasrag.modules.knowledge.models import DocumentACL
 from atlasrag.platform.database.integrity import is_integrity_error_for_constraint

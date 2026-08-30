@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Protocol
 from uuid import UUID
 
-from atlasrag.contracts.identity_types import (
+from atlasrag.contracts.types.identity_types import (
     ActivePermissionGrant,
     PermissionDefinitionState,
 )

@@ -8,7 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
-from atlasrag.contracts.permission_errors import (
+from atlasrag.contracts.error.permission_errors import (
     LastSuperadminViolation,
     PermissionGrantConflict,
     PermissionGrantNotFound,

@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import Depends, HTTPException, status
 
 from apps.api.dependencies.identity import DatabaseSession, get_local_principal_id
-from atlasrag.contracts.permission_errors import PermissionDenied
+from atlasrag.contracts.error.permission_errors import PermissionDenied
 from atlasrag.contracts.permissions import Permission
 from atlasrag.modules.identity.repositories.effective_principal import (
     EffectivePrincipalRepository,

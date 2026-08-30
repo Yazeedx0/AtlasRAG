@@ -39,6 +39,14 @@ class Settings(BaseSettings):
     SEED_USER_DISPLAY_NAME: str = "Atlas Admin"
     SEED_USER_FIRST_NAME: str = "Atlas"
     SEED_USER_LAST_NAME: str = "Admin"
+
+    MINIO_ENDPOINT_URL: str = "http://localhost:9000"
+    MINIO_USE_SSL: bool = False
+    MINIO_ROOT_USER: str = "atlas"
+    MINIO_ROOT_PASSWORD: str = "atlas_dev_password"
+    MINIO_BUCKET: str = "atlasrag"
+    MINIO_REGION: str = "us-east-1"
+
     model_config = SettingsConfigDict(
         env_prefix="ATLAS_",
         env_file=".env",

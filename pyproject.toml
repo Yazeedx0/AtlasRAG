@@ -36,6 +36,7 @@ dependencies = [
     "langfuse>=2.55",
     "structlog>=24.4",
     "httpx>=0.28.1",
+    "aioboto3==15.5.0",
 ]
 
 [project.optional-dependencies]

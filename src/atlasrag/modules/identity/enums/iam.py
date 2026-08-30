@@ -1,4 +1,4 @@
-from enum import StrEnum
+from enum import Enum
 
 from sqlalchemy import Enum as SqlEnum
 
@@ -11,7 +11,7 @@ __all__ = [
 ]
 
 
-class PrincipalType(StrEnum):
+class PrincipalType(Enum):
 
     USER = "user"
     ROLE = "role"

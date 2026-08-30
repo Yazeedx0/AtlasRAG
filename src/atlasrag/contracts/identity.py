@@ -1,5 +1,5 @@
 from datetime import datetime
-from enum import StrEnum
+from enum import Enum
 from types import TracebackType
 from typing import Protocol
 from uuid import UUID
@@ -8,7 +8,7 @@ from atlasrag.contracts.authentication import AuthenticatedIdentity
 from atlasrag.contracts.identity_types import LocalUserIdentity, PrincipalState
 
 
-class IdentifierType(StrEnum):
+class IdentifierType(Enum):
     OIDC_SUBJECT = "oidc_subject"
 
 

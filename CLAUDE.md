@@ -71,7 +71,7 @@ IDs.
 
 
 ## Enums
-- use Enum and dont use StrEnum, example:
+- use Enum and dont use Enum, example:
     class AssessmentType(Enum):
         FULL_ASSESSMENT = "full_assessment"
         ADAPTIVE_ASSESSMENT = "adaptive_assessment"

@@ -250,7 +250,7 @@ def rrf(result_lists: list[list[str]], k: int = 60) -> list[str]:
 **You build** — the StateGraph:
 
 ```python
-class AnswerStatus(StrEnum):
+class AnswerStatus(Enum):
     ANSWERED = "answered"
     INSUFFICIENT_EVIDENCE = "insufficient_evidence"
     CONFLICTING_EVIDENCE = "conflicting_evidence"

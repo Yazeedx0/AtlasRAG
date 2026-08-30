@@ -53,6 +53,29 @@ make ingest
 make eval                     # writes a report to evals/reports/
 ```
 
+To seed a local development user in Keycloak and assign the local `superadmin` role:
+
+```bash
+export ATLAS_SEED_USER_PASSWORD='use-a-local-development-password'
+uv run python -m scripts.seed_dev_data
+```
+
+The script is safe to rerun: it reuses an existing Keycloak user and local identity. Use
+`--reset-password` only when you explicitly want to reset the existing user's password.
+Run `make migrate` first because the migration creates the built-in permissions and
+`superadmin` role.
+
+The seed also ensures the development-only `atlasrag-cli` client. Get a token for Postman
+with:
+
+```bash
+uv run python -m scripts.get_dev_token
+```
+
+Copy the printed value into Postman's Bearer Token authorization. This client uses the
+password grant for local development only; the `atlasrag-web` client remains an
+authorization-code client.
+
 ### Authentication
 
 Local authentication uses Keycloak. Start the database and Keycloak services with:

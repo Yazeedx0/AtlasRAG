@@ -1,0 +1,28 @@
+meta {
+  name: Add Group Member
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/iam/groups/{{groupId}}/members
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "member_id": "{{memberId}}"
+  }
+}
+
+tests {
+  test("adds the direct group member", function () {
+    expect(res.getStatus()).to.equal(204);
+  });
+}
+
+docs {
+  Requires `iam.groups.manage`. A group cannot contain itself, and nested groups cannot create a
+  membership cycle.
+}

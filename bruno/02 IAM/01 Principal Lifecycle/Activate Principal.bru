@@ -1,0 +1,21 @@
+meta {
+  name: Activate Principal
+  type: http
+  seq: 1
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/iam/principals/{{targetPrincipalId}}/activate
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("activates the target principal", function () {
+    expect(res.getStatus()).to.equal(204);
+  });
+}
+
+docs {
+  Requires `iam.principals.manage`. Set `targetPrincipalId` to an inactive principal.
+}

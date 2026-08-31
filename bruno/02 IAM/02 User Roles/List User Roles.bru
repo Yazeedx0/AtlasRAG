@@ -1,0 +1,22 @@
+meta {
+  name: List User Roles
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/iam/users/{{userId}}/roles
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("lists active user role assignments", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.body).to.be.an("array");
+  });
+}
+
+docs {
+  Requires `iam.roles.manage` and returns active role assignments for `userId`.
+}

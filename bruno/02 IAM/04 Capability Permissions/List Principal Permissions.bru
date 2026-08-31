@@ -1,0 +1,22 @@
+meta {
+  name: List Principal Permissions
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/v1/iam/principals/{{targetPrincipalId}}/permissions
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("lists active direct capability grants", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.body).to.be.an("array");
+  });
+}
+
+docs {
+  Requires `iam.permissions.manage`. Returns direct grants only for `targetPrincipalId`.
+}

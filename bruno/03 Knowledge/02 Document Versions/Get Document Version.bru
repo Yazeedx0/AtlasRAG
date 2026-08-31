@@ -1,0 +1,23 @@
+meta {
+  name: Get Document Version
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/v1/documents/{{documentId}}/versions/{{versionId}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("returns the requested document version", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.body.id).to.equal(bru.getEnvVar("versionId"));
+    expect(res.body.document_id).to.equal(bru.getEnvVar("documentId"));
+  });
+}
+
+docs {
+  Requires `knowledge.documents.manage` and returns `versionId` scoped to `documentId`.
+}

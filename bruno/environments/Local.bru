@@ -1,0 +1,35 @@
+vars {
+  baseUrl: http://localhost:8000
+  keycloakUrl: http://localhost:8080
+  keycloakRealm: atlasrag
+  keycloakClientId: atlasrag-cli
+  seedUsername: atlas-admin
+  targetPrincipalId: 00000000-0000-0000-0000-000000000000
+  userId: 00000000-0000-0000-0000-000000000000
+  roleId: 00000000-0000-0000-0000-000000000000
+  groupId: 00000000-0000-0000-0000-000000000000
+  memberId: 00000000-0000-0000-0000-000000000000
+  permissionKey: knowledge.documents.manage
+  currentPrincipalId: 00000000-0000-0000-0000-000000000000
+  documentId: 00000000-0000-0000-0000-000000000000
+  versionId: 00000000-0000-0000-0000-000000000000
+  grantId: 00000000-0000-0000-0000-000000000000
+  artifactId: 00000000-0000-0000-0000-000000000000
+  canonicalKey: bruno-example-document
+  versionLabel: 1.0.0
+  artifactKey: primary-source
+  languageCode: en
+  includeHistory: false
+  aclPermission: read
+  aclExpiresAt: 2027-01-01T00:00:00Z
+  publishAt: 2026-09-01T00:00:00Z
+  withdrawAt: 2026-12-31T23:59:59Z
+  effectiveAt: 2026-10-01T00:00:00Z
+  sourceUri: https://example.com/source
+  sourceUpdatedAt: 2026-08-31T00:00:00Z
+}
+
+vars:secret [
+  seedUserPassword,
+  accessToken
+]

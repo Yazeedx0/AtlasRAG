@@ -1,0 +1,43 @@
+meta {
+  name: Get Development Token
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{keycloakUrl}}/realms/{{keycloakRealm}}/protocol/openid-connect/token
+  body: formUrlEncoded
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Content-Type: application/x-www-form-urlencoded
+}
+
+body:form-urlencoded {
+  grant_type: password
+  client_id: {{keycloakClientId}}
+  username: {{seedUsername}}
+  password: {{seedUserPassword}}
+  scope: openid
+}
+
+script:post-response {
+  if (res.getStatus() === 200 && res.body.access_token) {
+    bru.setEnvVar("accessToken", res.body.access_token);
+  }
+}
+
+tests {
+  test("returns a development access token", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.body.access_token).to.be.a("string");
+  });
+}
+
+docs {
+  Requests a token from the development-only `atlasrag-cli` Keycloak client and stores it as
+  `accessToken`. The client is created by the development seed script and uses the password grant
+  only for local development.
+}

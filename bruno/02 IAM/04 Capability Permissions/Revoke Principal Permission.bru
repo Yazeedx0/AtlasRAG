@@ -1,0 +1,22 @@
+meta {
+  name: Revoke Principal Permission
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/iam/principals/{{targetPrincipalId}}/permissions/{{permissionKey}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("revokes the active capability grant", function () {
+    expect(res.getStatus()).to.equal(204);
+  });
+}
+
+docs {
+  Requires `iam.permissions.manage`. Revokes the direct capability grant without changing role-
+  or group-derived access.
+}

@@ -1,0 +1,26 @@
+meta {
+  name: Liveness
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/health
+  body: none
+  auth: none
+}
+
+vars:pre-request {
+  baseUrl: 127.0.0.1:8000
+}
+
+tests {
+  test("reports a live process", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.body.status).to.equal("ok");
+  });
+}
+
+docs {
+  Process liveness probe. This route does not access external dependencies.
+}

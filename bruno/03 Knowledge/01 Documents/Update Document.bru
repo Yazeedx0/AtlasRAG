@@ -1,0 +1,34 @@
+meta {
+  name: Update Document
+  type: http
+  seq: 2
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/documents/{{documentId}}
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "title": "Bruno Example Document - Updated",
+    "description": null,
+    "metadata": {
+      "source": "bruno",
+      "updated": true
+    }
+  }
+}
+
+tests {
+  test("updates the mutable document fields", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.body.id).to.equal(bru.getEnvVar("documentId"));
+  });
+}
+
+docs {
+  Requires `knowledge.documents.manage`. Omitted fields remain unchanged; `canonical_key` is
+  immutable. At least one mutable field is required.
+}

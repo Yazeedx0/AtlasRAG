@@ -1,0 +1,29 @@
+meta {
+  name: Withdraw Document Version
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/documents/{{documentId}}/versions/{{versionId}}/withdraw
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "effective_to": "{{withdrawAt}}"
+  }
+}
+
+tests {
+  test("withdraws the published version", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.body.status).to.equal("withdrawn");
+  });
+}
+
+docs {
+  Requires `knowledge.documents.manage`. `withdrawAt` must be timezone-aware and valid for the
+  published effective period.
+}

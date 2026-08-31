@@ -1,0 +1,23 @@
+meta {
+  name: Archive Document Version
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/v1/documents/{{documentId}}/versions/{{versionId}}/archive
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("archives the withdrawn version", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.body.status).to.equal("archived");
+  });
+}
+
+docs {
+  Requires `knowledge.documents.manage`. Archives `versionId` according to the version state
+  transition rules.
+}

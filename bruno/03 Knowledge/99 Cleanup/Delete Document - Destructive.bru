@@ -1,0 +1,22 @@
+meta {
+  name: Delete Document - Destructive
+  type: http
+  seq: 1
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/documents/{{documentId}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("soft-deletes the document", function () {
+    expect(res.getStatus()).to.equal(204);
+  });
+}
+
+docs {
+  Requires `knowledge.documents.manage`. This is the final knowledge-workflow step and soft-deletes
+  `documentId`; its stored history is retained.
+}

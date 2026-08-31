@@ -1,0 +1,19 @@
+headers {
+  Accept: application/json
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  # AtlasRAG API
+
+  Protected requests inherit a Bearer token from this collection. Run
+  `00 Authentication/Get Development Token` first, or set `accessToken` in the
+  selected environment.
+}

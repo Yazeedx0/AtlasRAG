@@ -1,0 +1,21 @@
+meta {
+  name: Remove Group Member
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/iam/groups/{{groupId}}/members/{{memberId}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("removes the active group membership", function () {
+    expect(res.getStatus()).to.equal(204);
+  });
+}
+
+docs {
+  Requires `iam.groups.manage`. Removes `memberId` from `groupId`.
+}

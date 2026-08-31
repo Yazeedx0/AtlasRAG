@@ -1,0 +1,21 @@
+meta {
+  name: Revoke User Role
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/iam/users/{{userId}}/roles/{{roleId}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("revokes the active role assignment", function () {
+    expect(res.getStatus()).to.equal(204);
+  });
+}
+
+docs {
+  Requires `iam.roles.manage`. Revokes the active `roleId` assignment from `userId`.
+}

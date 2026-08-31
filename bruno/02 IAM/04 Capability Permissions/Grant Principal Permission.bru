@@ -1,0 +1,21 @@
+meta {
+  name: Grant Principal Permission
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/v1/iam/principals/{{targetPrincipalId}}/permissions/{{permissionKey}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("grants the capability", function () {
+    expect(res.getStatus()).to.equal(204);
+  });
+}
+
+docs {
+  Requires `iam.permissions.manage`. `permissionKey` must be a registered capability value.
+}

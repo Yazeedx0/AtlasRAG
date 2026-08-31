@@ -1,0 +1,22 @@
+meta {
+  name: Readiness
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/health/ready
+  body: none
+  auth: none
+}
+
+tests {
+  test("reports readiness", function () {
+    expect([200, 503]).to.include(res.getStatus());
+    expect(["ready", "degraded"]).to.include(res.body.status);
+  });
+}
+
+docs {
+  Readiness probe. It returns `200` when ready and `503` when dependency checks are degraded.
+}

@@ -1,0 +1,28 @@
+meta {
+  name: Assign User Role
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/iam/users/{{userId}}/roles
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "role_id": "{{roleId}}"
+  }
+}
+
+tests {
+  test("assigns the role", function () {
+    expect(res.getStatus()).to.equal(204);
+  });
+}
+
+docs {
+  Requires `iam.roles.manage`. Both `userId` and `roleId` must reference active principals of the
+  expected types.
+}

@@ -1,0 +1,3 @@
+AtlasRAG Bruno upload fixture.
+
+This plain-text artifact is intentionally small and contains no sensitive data.

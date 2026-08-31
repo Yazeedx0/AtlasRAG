@@ -1,0 +1,22 @@
+meta {
+  name: Retire Principal - Irreversible
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/iam/principals/{{targetPrincipalId}}/retire
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("retires the target principal", function () {
+    expect(res.getStatus()).to.equal(204);
+  });
+}
+
+docs {
+  Requires `iam.principals.manage`. Retirement is permanent; verify `targetPrincipalId` before
+  sending this request.
+}

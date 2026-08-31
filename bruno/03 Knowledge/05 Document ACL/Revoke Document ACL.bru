@@ -1,0 +1,21 @@
+meta {
+  name: Revoke Document ACL
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/documents/{{documentId}}/acl/{{grantId}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("revokes the active ACL grant", function () {
+    expect(res.getStatus()).to.equal(204);
+  });
+}
+
+docs {
+  Requires `knowledge.document_acl.manage`. The grant remains available in ACL history.
+}

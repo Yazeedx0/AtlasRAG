@@ -1,0 +1,22 @@
+meta {
+  name: List Group Members
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/iam/groups/{{groupId}}/members
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("lists direct active group members", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.body).to.be.an("array");
+  });
+}
+
+docs {
+  Requires `iam.groups.manage` and returns direct active members of `groupId`.
+}

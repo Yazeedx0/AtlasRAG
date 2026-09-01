@@ -2,6 +2,7 @@ from typing import Annotated
 
 from fastapi import Header, HTTPException, Request, status
 
+from atlasrag.bootstrap.core.config import get_settings
 from atlasrag.contracts.authentication import (
     AuthenticatedIdentity,
     TokenVerificationError,
@@ -32,6 +33,17 @@ async def get_authenticated_identity(
     authorization: Annotated[str | None, Header()] = None,
 ) -> AuthenticatedIdentity:
     """Verify the request bearer token and return its external identity."""
+    settings = get_settings()
+    if settings.DISABLE_AUTH:
+        return AuthenticatedIdentity(
+            issuer=str(settings.KEYCLOAK_ISSUER),
+            subject=settings.SEED_USER_USERNAME,
+            email=settings.SEED_USER_EMAIL,
+            email_verified=True,
+            username=settings.SEED_USER_USERNAME,
+            display_name=settings.SEED_USER_DISPLAY_NAME,
+        )
+
     token_verifier: TokenVerifier | None = getattr(request.app.state, "token_verifier", None)
     if token_verifier is None:
         raise RuntimeError("Authentication verifier is not configured")

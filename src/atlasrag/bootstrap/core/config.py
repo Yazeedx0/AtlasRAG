@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     DATABASE_ECHO: bool = False
     DEBUG: bool = False
 
+    DISABLE_AUTH: bool = False
+
     KEYCLOAK_ISSUER: AnyHttpUrl = "http://localhost:8080/realms/atlasrag"
     KEYCLOAK_DISCOVERY_URL: AnyHttpUrl = (
         "http://localhost:8080/realms/atlasrag/.well-known/openid-configuration"

@@ -23,8 +23,9 @@ dependencies = [
     "arq>=0.26",
     # models
     "litellm>=1.55",
-    "openai>=1.57",
-    "cohere>=5.13",
+    "openai==3.6.0",
+    "cohere==7.1.1",
+    "anthropic==1.3.0",
     # agentic layer
     "langgraph>=1.0",
     # ingestion
@@ -38,6 +39,7 @@ dependencies = [
     "httpx>=0.28.1",
     "aioboto3==15.5.0",
     "python-multipart>=0.0.32",
+    "google-genai==2.21.0",
 ]
 
 [project.optional-dependencies]

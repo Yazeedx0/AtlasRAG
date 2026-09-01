@@ -198,6 +198,25 @@ class DocumentArtifactVersionNotDraft(DocumentError):
         )
 
 
+class DocumentArtifactNotAvailable(DocumentError):
+    def __init__(self, *, artifact_id: UUID, status: DocumentArtifactStatus) -> None:
+        self.artifact_id = artifact_id
+        self.status = status
+        super().__init__(
+            f"document artifact {artifact_id} is {status.value}; only available artifacts can be downloaded"
+        )
+
+
+class DocumentArtifactObjectMissing(DocumentError):
+    def __init__(self, *, artifact_id: UUID, storage_key: str) -> None:
+        self.artifact_id = artifact_id
+        self.storage_key = storage_key
+        super().__init__(
+            f"document artifact {artifact_id} is marked available but "
+            f"storage object {storage_key!r} could not be found"
+        )
+
+
 class DocumentArtifactInvalidTransition(DocumentError):
     def __init__(
         self,
@@ -220,13 +239,15 @@ __all__ = [
     "DocumentAclGrantConflict",
     "DocumentAclGrantNotFound",
     "DocumentAclPrincipalNotFound",
-    "DocumentArtifactContentTypeInvalid",
     "DocumentArtifactConflict",
+    "DocumentArtifactContentTypeInvalid",
     "DocumentArtifactEmpty",
     "DocumentArtifactInvalidTransition",
     "DocumentArtifactKeyInvalid",
     "DocumentArtifactLanguageCodeInvalid",
+    "DocumentArtifactNotAvailable",
     "DocumentArtifactNotFound",
+    "DocumentArtifactObjectMissing",
     "DocumentArtifactStorageLocationConflict",
     "DocumentArtifactTooLarge",
     "DocumentArtifactVersionNotDraft",

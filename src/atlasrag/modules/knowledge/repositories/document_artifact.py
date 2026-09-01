@@ -85,12 +85,16 @@ class DocumentArtifactRepository:
         self,
         *,
         document_version_id: UUID,
+        include_deleted: bool = False,
     ) -> tuple[DocumentArtifactState, ...]:
-        statement = (
-            select(*_artifact_columns())
-            .where(DocumentArtifact.document_version_id == document_version_id)
-            .order_by(DocumentArtifact.created_at, DocumentArtifact.id)
+        statement = select(*_artifact_columns()).where(
+            DocumentArtifact.document_version_id == document_version_id,
         )
+        if not include_deleted:
+            statement = statement.where(
+                DocumentArtifact.status != DocumentArtifactStatus.DELETED,
+            )
+        statement = statement.order_by(DocumentArtifact.created_at, DocumentArtifact.id)
         rows = (await self._session.execute(statement)).all()
         return tuple(_to_artifact_state(row) for row in rows)
 

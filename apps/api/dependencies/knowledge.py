@@ -9,18 +9,24 @@ from apps.api.dependencies.storage import get_object_storage
 from atlasrag.bootstrap.core.config import get_settings
 from atlasrag.contracts.documents import (
     DocumentAclRepository as DocumentAclRepositoryContract,
+)
+from atlasrag.contracts.documents import (
     DocumentArtifactRepository as DocumentArtifactRepositoryContract,
+)
+from atlasrag.contracts.documents import (
     DocumentRepository as DocumentRepositoryContract,
+)
+from atlasrag.contracts.documents import (
     DocumentVersionRepository as DocumentVersionRepositoryContract,
 )
 from atlasrag.contracts.identity import PrincipalRepository as PrincipalRepositoryContract
 from atlasrag.contracts.object_storage import ObjectStorage
 from atlasrag.modules.identity.repositories.principal import PrincipalRepository
-from atlasrag.modules.knowledge.repositories.document_acl import (
-    DocumentAclRepository,
-)
 from atlasrag.modules.knowledge.repositories.document import (
     DocumentRepository,
+)
+from atlasrag.modules.knowledge.repositories.document_acl import (
+    DocumentAclRepository,
 )
 from atlasrag.modules.knowledge.repositories.document_artifact import (
     DocumentArtifactRepository,
@@ -30,6 +36,9 @@ from atlasrag.modules.knowledge.repositories.document_version import (
 )
 from atlasrag.modules.knowledge.services.document_acl_management import (
     DocumentAclManagementService,
+)
+from atlasrag.modules.knowledge.services.document_artifact_query import (
+    DocumentArtifactQueryService,
 )
 from atlasrag.modules.knowledge.services.document_artifact_upload import (
     DocumentArtifactUploadService,
@@ -134,9 +143,16 @@ def get_document_artifact_max_file_size_bytes() -> int:
     return get_settings().MAX_FILE_SIZE_BYTES
 
 
+def get_document_artifact_query_service() -> DocumentArtifactQueryService:
+    return DocumentArtifactQueryService(
+        make_knowledge_unit_of_work_factory(async_session_factory),
+    )
+
+
 __all__ = [
     "get_document_acl_management_service",
     "get_document_artifact_max_file_size_bytes",
+    "get_document_artifact_query_service",
     "get_document_artifact_upload_service",
     "get_document_management_service",
     "get_document_version_management_service",

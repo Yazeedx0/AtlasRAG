@@ -225,6 +225,7 @@ class DocumentArtifactRepository(Protocol):
         self,
         *,
         document_version_id: UUID,
+        include_deleted: bool = False,
     ) -> tuple[DocumentArtifactState, ...]:
         ...
 

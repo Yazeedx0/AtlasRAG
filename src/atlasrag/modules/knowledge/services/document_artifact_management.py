@@ -101,10 +101,12 @@ class DocumentArtifactManagementService:
     async def mark_missing(
         self,
         *,
+        document_id: UUID,
         document_version_id: UUID,
         artifact_id: UUID,
     ) -> DocumentArtifactState:
         return await self._transition(
+            document_id=document_id,
             document_version_id=document_version_id,
             artifact_id=artifact_id,
             target_status=DocumentArtifactStatus.MISSING,
@@ -113,10 +115,12 @@ class DocumentArtifactManagementService:
     async def mark_available(
         self,
         *,
+        document_id: UUID,
         document_version_id: UUID,
         artifact_id: UUID,
     ) -> DocumentArtifactState:
         return await self._transition(
+            document_id=document_id,
             document_version_id=document_version_id,
             artifact_id=artifact_id,
             target_status=DocumentArtifactStatus.AVAILABLE,
@@ -125,10 +129,12 @@ class DocumentArtifactManagementService:
     async def retire_artifact(
         self,
         *,
+        document_id: UUID,
         document_version_id: UUID,
         artifact_id: UUID,
     ) -> DocumentArtifactState:
         return await self._transition(
+            document_id=document_id,
             document_version_id=document_version_id,
             artifact_id=artifact_id,
             target_status=DocumentArtifactStatus.RETIRED,
@@ -138,48 +144,40 @@ class DocumentArtifactManagementService:
     async def delete_artifact(
         self,
         *,
+        document_id: UUID,
         document_version_id: UUID,
         artifact_id: UUID,
     ) -> DocumentArtifactState:
         return await self._transition(
+            document_id=document_id,
             document_version_id=document_version_id,
             artifact_id=artifact_id,
             target_status=DocumentArtifactStatus.DELETED,
             deleted_at=self._clock(),
         )
 
-    async def get_artifact(
+    async def _require_version(
         self,
         *,
+        uow: KnowledgeUnitOfWork,
+        document_id: UUID,
         document_version_id: UUID,
-        artifact_id: UUID,
-    ) -> DocumentArtifactState:
-        async with self._uow_factory() as uow:
-            artifact = await uow.document_artifacts.find_by_id(
-                document_version_id=document_version_id,
-                artifact_id=artifact_id,
-                lock=False,
-            )
-            if artifact is None:
-                raise DocumentArtifactNotFound(
-                    document_version_id=document_version_id,
-                    artifact_id=artifact_id,
-                )
-            return artifact
-
-    async def list_artifacts(
-        self,
-        *,
-        document_version_id: UUID,
-    ) -> tuple[DocumentArtifactState, ...]:
-        async with self._uow_factory() as uow:
-            return await uow.document_artifacts.list_for_version(
-                document_version_id=document_version_id,
+    ) -> None:
+        version = await uow.document_versions.find_by_id(
+            document_id=document_id,
+            version_id=document_version_id,
+            lock=False,
+        )
+        if version is None:
+            raise DocumentVersionNotFound(
+                document_id=document_id,
+                version_id=document_version_id,
             )
 
     async def _transition(
         self,
         *,
+        document_id: UUID,
         document_version_id: UUID,
         artifact_id: UUID,
         target_status: DocumentArtifactStatus,
@@ -187,6 +185,11 @@ class DocumentArtifactManagementService:
         deleted_at: datetime | None = None,
     ) -> DocumentArtifactState:
         async with self._uow_factory() as uow:
+            await self._require_version(
+                uow=uow,
+                document_id=document_id,
+                document_version_id=document_version_id,
+            )
             artifact = await uow.document_artifacts.find_by_id(
                 document_version_id=document_version_id,
                 artifact_id=artifact_id,

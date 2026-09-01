@@ -4,6 +4,8 @@ from functools import lru_cache
 from pydantic import AnyHttpUrl, Field, PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from atlasrag.contracts.types.ai_types import AiProvider
+
 
 class Environment(Enum):
     DEVELOPMENT = "development"
@@ -46,6 +48,26 @@ class Settings(BaseSettings):
     MINIO_ROOT_PASSWORD: str = "atlas_dev_password"
     MINIO_BUCKET: str = "atlasrag"
     MINIO_REGION: str = "us-east-1"
+
+    GENERATION_PROVIDER: AiProvider = AiProvider.OPENAI
+    GENERATION_MODEL: str = Field(default="gpt-4o-mini", min_length=1)
+    EMBEDDING_PROVIDER: AiProvider = AiProvider.OPENAI
+    EMBEDDING_MODEL: str = Field(default="text-embedding-3-small", min_length=1)
+    RERANK_PROVIDER: AiProvider = AiProvider.COHERE
+    RERANK_MODEL: str = Field(default="rerank-v3.5", min_length=1)
+
+    OPENAI_API_KEY: str | None = None
+    OPENAI_TIMEOUT_SECONDS: float = 30.0
+    OPENAI_MAX_RETRIES: int = 2
+    ANTHROPIC_API_KEY: str | None = None
+    ANTHROPIC_TIMEOUT_SECONDS: float = 30.0
+    ANTHROPIC_MAX_RETRIES: int = 2
+    COHERE_API_KEY: str | None = None
+    COHERE_TIMEOUT_SECONDS: float = 30.0
+    COHERE_MAX_RETRIES: int = 2
+    GEMINI_API_KEY: str | None = None
+    GEMINI_TIMEOUT_SECONDS: float = 30.0
+    GEMINI_MAX_RETRIES: int = 2
 
     ALLOWED_CONTENT_TYPES: frozenset[str] = frozenset(
         {

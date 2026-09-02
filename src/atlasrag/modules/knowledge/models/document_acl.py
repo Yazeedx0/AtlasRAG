@@ -44,6 +44,12 @@ class DocumentACL(Base):
                 "revoked_at IS NULL AND permission = 'read'"
             ),
         ),
+        Index(
+            "ix_document_acl_document_id_granted_at",
+            "document_id",
+            "granted_at",
+            "id",
+        ),
         {"schema": "knowledge"},
     )
 

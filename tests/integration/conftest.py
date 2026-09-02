@@ -12,6 +12,9 @@ from sqlalchemy.ext.asyncio import (
 )
 from testcontainers.postgres import PostgresContainer
 
+from atlasrag.modules.identity import models as _identity_models  # noqa: F401
+from atlasrag.modules.ingestion import models as _ingestion_models  # noqa: F401
+from atlasrag.modules.knowledge import models as _knowledge_models  # noqa: F401
 from atlasrag.platform.database import Base
 
 

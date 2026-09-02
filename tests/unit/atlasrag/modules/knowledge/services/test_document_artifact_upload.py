@@ -24,8 +24,8 @@ from atlasrag.contracts.error.document_errors import (
     DocumentNotFound,
     DocumentVersionNotFound,
 )
-from atlasrag.contracts.types.authorization_types import DocumentVersionStatus
-from atlasrag.contracts.types.document_types import DocumentState, DocumentVersionState
+from atlasrag.contracts.types.authorization import DocumentVersionStatus
+from atlasrag.contracts.types.document import DocumentState, DocumentVersionState
 from atlasrag.modules.knowledge.services.document_artifact_upload import (
     DocumentArtifactUploadService,
 )

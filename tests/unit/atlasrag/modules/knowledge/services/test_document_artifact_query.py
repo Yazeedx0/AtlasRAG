@@ -11,11 +11,11 @@ from atlasrag.contracts.error.document_errors import (
     DocumentNotFound,
     DocumentVersionNotFound,
 )
-from atlasrag.contracts.types.authorization_types import (
+from atlasrag.contracts.types.authorization import (
     DocumentArtifactStatus,
     DocumentVersionStatus,
 )
-from atlasrag.contracts.types.document_types import DocumentState, DocumentVersionState
+from atlasrag.contracts.types.document import DocumentState, DocumentVersionState
 from atlasrag.modules.knowledge.services.document_artifact_query import (
     DocumentArtifactQueryService,
 )

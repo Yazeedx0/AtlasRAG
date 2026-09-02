@@ -2,7 +2,7 @@ from collections.abc import Callable
 from uuid import UUID
 
 from atlasrag.contracts.identity import ProtectedIdentityUnitOfWork
-from atlasrag.contracts.types.identity_types import PrincipalState
+from atlasrag.contracts.types.identity import PrincipalState
 from atlasrag.modules.identity.helpers.errors import PrincipalNotFound, PrincipalRetired
 from atlasrag.modules.identity.services.superadmin_policy import SuperadminPolicy
 

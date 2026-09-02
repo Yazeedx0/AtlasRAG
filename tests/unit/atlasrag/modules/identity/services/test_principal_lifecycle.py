@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from atlasrag.contracts.types.identity_types import PrincipalState
+from atlasrag.contracts.types.identity import PrincipalState
 from atlasrag.contracts.error.permission_errors import (
     LastSuperadminViolation,
     ProtectedSuperadminRole,

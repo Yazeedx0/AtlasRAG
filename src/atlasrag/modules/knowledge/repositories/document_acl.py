@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute
 
-from atlasrag.contracts.types.authorization_types import DocumentPermission
+from atlasrag.contracts.types.authorization import DocumentPermission
 from atlasrag.contracts.error.document_errors import DocumentAclGrantConflict
 from atlasrag.contracts.documents import CreateDocumentAclGrant, DocumentAclGrantState
 from atlasrag.modules.knowledge.models import DocumentACL

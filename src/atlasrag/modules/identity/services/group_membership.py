@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 from atlasrag.contracts.identity import GroupMembershipUnitOfWork
-from atlasrag.contracts.types.identity_types import DirectGroupMember, PrincipalState
+from atlasrag.contracts.types.identity import DirectGroupMember, PrincipalState
 from atlasrag.modules.identity.enums import PrincipalType
 from atlasrag.modules.identity.helpers.errors import (
     GroupCycleDetected,

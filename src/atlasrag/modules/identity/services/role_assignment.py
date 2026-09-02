@@ -5,7 +5,7 @@ from uuid import UUID
 from sqlalchemy.exc import IntegrityError
 
 from atlasrag.contracts.identity import RoleAssignmentUnitOfWork
-from atlasrag.contracts.types.identity_types import AssignedRole
+from atlasrag.contracts.types.identity import AssignedRole
 from atlasrag.modules.identity.helpers.errors import (
     RoleAssignmentConflict,
     RoleAssignmentNotFound,

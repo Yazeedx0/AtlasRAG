@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import exists, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from atlasrag.contracts.types.authorization_types import DocumentPermission
+from atlasrag.contracts.types.authorization import DocumentPermission
 from atlasrag.modules.knowledge.models import Document, DocumentACL
 
 

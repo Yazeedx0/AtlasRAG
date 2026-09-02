@@ -16,7 +16,7 @@ from testcontainers.core.wait_strategies import HttpWaitStrategy
 
 from atlasrag.contracts.documents import CreateDocumentArtifact, UploadDocumentArtifact
 from atlasrag.contracts.error.document_errors import DocumentArtifactConflict
-from atlasrag.contracts.types.authorization_types import DocumentVersionStatus
+from atlasrag.contracts.types.authorization import DocumentVersionStatus
 from atlasrag.modules.identity.enums import PrincipalType
 from atlasrag.modules.identity.models import Principal, Users
 from atlasrag.modules.knowledge.models import Document, DocumentArtifact, DocumentVersion

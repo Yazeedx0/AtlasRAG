@@ -9,7 +9,7 @@ from sqlalchemy.orm import InstrumentedAttribute
 
 from atlasrag.contracts.documents import CreateDocumentVersion, DocumentVersionState
 from atlasrag.contracts.error.document_errors import DocumentVersionConflict, DocumentVersionOverlap
-from atlasrag.contracts.types.authorization_types import DocumentVersionStatus
+from atlasrag.contracts.types.authorization import DocumentVersionStatus
 from atlasrag.modules.knowledge.models import DocumentVersion
 from atlasrag.platform.database.integrity import is_integrity_error_for_constraint
 

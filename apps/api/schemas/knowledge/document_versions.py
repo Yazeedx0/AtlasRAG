@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from atlasrag.contracts.types.authorization_types import DocumentVersionStatus
+from atlasrag.contracts.types.authorization import DocumentVersionStatus
 
 
 class DocumentVersionCreateRequest(BaseModel):

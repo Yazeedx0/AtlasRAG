@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from atlasrag.contracts.types.authorization_types import (
+from atlasrag.contracts.types.authorization import (
     DocumentArtifactStatus,
     DocumentPermission,
     DocumentVersionStatus,

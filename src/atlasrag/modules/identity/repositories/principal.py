@@ -5,7 +5,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.elements import ClauseElement
 
-from atlasrag.contracts.types.identity_types import PrincipalState
+from atlasrag.contracts.types.identity import PrincipalState
 from atlasrag.modules.identity.models import Principal
 
 

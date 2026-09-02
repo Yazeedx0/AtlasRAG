@@ -12,7 +12,7 @@ from atlasrag.contracts.error.document_errors import (
     DocumentArtifactConflict,
     DocumentArtifactStorageLocationConflict,
 )
-from atlasrag.contracts.types.authorization_types import DocumentArtifactStatus
+from atlasrag.contracts.types.authorization import DocumentArtifactStatus
 from atlasrag.modules.knowledge.models import DocumentArtifact
 from atlasrag.platform.database.integrity import is_integrity_error_for_constraint
 

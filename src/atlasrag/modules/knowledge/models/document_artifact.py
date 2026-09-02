@@ -17,7 +17,7 @@ from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from atlasrag.contracts.types.authorization_types import DocumentArtifactStatus
+from atlasrag.contracts.types.authorization import DocumentArtifactStatus
 from atlasrag.platform.database.base import Base
 
 DOCUMENT_ARTIFACT_STATUS_DB_ENUM = SqlEnum(

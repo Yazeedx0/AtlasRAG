@@ -13,7 +13,7 @@ from atlasrag.contracts.error.document_errors import (
     DocumentArtifactVersionNotDraft,
     DocumentVersionNotFound,
 )
-from atlasrag.contracts.types.authorization_types import (
+from atlasrag.contracts.types.authorization import (
     DocumentArtifactStatus,
     DocumentVersionStatus,
 )

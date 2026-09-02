@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import StrEnum
 from uuid import UUID
 
-from atlasrag.contracts.types.authorization_types import (
+from atlasrag.contracts.types.authorization import (
     DocumentArtifactStatus,
     DocumentPermission,
     DocumentVersionStatus,
@@ -174,18 +174,3 @@ class UploadedDocumentArtifact:
     file_hash: str
     file_size_bytes: int
 
-
-__all__ = [
-    "CreateDocument",
-    "CreateDocumentAclGrant",
-    "CreateDocumentArtifact",
-    "CreateDocumentVersion",
-    "DocumentAclGrantState",
-    "DocumentArtifactState",
-    "DocumentField",
-    "DocumentPatch",
-    "DocumentState",
-    "DocumentVersionState",
-    "UploadDocumentArtifact",
-    "UploadedDocumentArtifact",
-]

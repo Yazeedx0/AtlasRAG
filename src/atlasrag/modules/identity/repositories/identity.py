@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from atlasrag.contracts.authentication import AuthenticatedIdentity
 from atlasrag.contracts.error.identity_errors import IdentityAlreadyProvisioned
-from atlasrag.contracts.types.identity_types import LocalUserIdentity
+from atlasrag.contracts.types.identity import LocalUserIdentity
 from atlasrag.modules.identity.enums import IdentifierType, PrincipalType
 from atlasrag.modules.identity.models import Principal, UserIdentifier, Users
 from atlasrag.platform.database.integrity import is_integrity_error_for_constraint

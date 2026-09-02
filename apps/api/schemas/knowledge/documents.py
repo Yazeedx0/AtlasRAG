@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from atlasrag.contracts.types.authorization_types import DocumentPermission
+from atlasrag.contracts.types.authorization import DocumentPermission
 
 
 class DocumentCreateRequest(BaseModel):

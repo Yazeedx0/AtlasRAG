@@ -1,5 +1,5 @@
 from typing import Protocol
-from atlasrag.contracts.types.authentication_types import AuthenticatedIdentity
+from atlasrag.contracts.types.authentication import AuthenticatedIdentity
 from atlasrag.contracts.error.identity_errors import TokenVerificationError
 
 class TokenVerifier(Protocol):

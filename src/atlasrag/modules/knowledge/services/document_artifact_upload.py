@@ -24,7 +24,7 @@ from atlasrag.contracts.error.document_errors import (
     DocumentVersionNotFound,
 )
 from atlasrag.contracts.object_storage import ObjectStorage
-from atlasrag.contracts.types.authorization_types import DocumentVersionStatus
+from atlasrag.contracts.types.authorization import DocumentVersionStatus
 
 logger = logging.getLogger(__name__)
 

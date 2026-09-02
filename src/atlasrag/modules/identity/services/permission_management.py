@@ -5,7 +5,7 @@ from uuid import UUID
 from sqlalchemy.exc import IntegrityError
 
 from atlasrag.contracts.identity import PermissionManagementUnitOfWork
-from atlasrag.contracts.types.identity_types import (
+from atlasrag.contracts.types.identity import (
     ActivePermissionGrant,
     PermissionDefinitionState,
 )

@@ -4,7 +4,7 @@ from uuid import UUID, uuid4
 import pytest
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
-from atlasrag.contracts.types.authorization_types import DocumentPermission
+from atlasrag.contracts.types.authorization import DocumentPermission
 from atlasrag.modules.identity.enums import PrincipalType
 from atlasrag.modules.identity.models import Group, Principal, Role, Users
 from atlasrag.modules.knowledge.models import Document, DocumentACL

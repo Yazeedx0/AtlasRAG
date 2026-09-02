@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
-from atlasrag.contracts.types.authorization_types import DocumentArtifactStatus
+from atlasrag.contracts.types.authorization import DocumentArtifactStatus
 
 
 class DocumentArtifactUploadResponse(BaseModel):

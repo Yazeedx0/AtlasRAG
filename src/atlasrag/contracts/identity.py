@@ -5,7 +5,7 @@ from typing import Protocol
 from uuid import UUID
 
 from atlasrag.contracts.authentication import AuthenticatedIdentity
-from atlasrag.contracts.types.identity_types import (
+from atlasrag.contracts.types.identity import (
     AssignedRole,
     DirectGroupMember,
     LocalUserIdentity,

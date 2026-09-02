@@ -2,7 +2,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from uuid import UUID
 
-from atlasrag.contracts.types.authorization_types import DocumentPermission
+from atlasrag.contracts.types.authorization import DocumentPermission
 from atlasrag.contracts.error.document_errors import (
     DocumentAclExpirationInvalid,
     DocumentAclGrantConflict,

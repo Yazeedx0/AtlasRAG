@@ -4,11 +4,11 @@ from typing import Protocol
 from uuid import UUID
 
 from atlasrag.contracts.identity import PrincipalRepository
-from atlasrag.contracts.types.authorization_types import (
+from atlasrag.contracts.types.authorization import (
     DocumentArtifactStatus,
     DocumentPermission,
 )
-from atlasrag.contracts.types.document_types import (
+from atlasrag.contracts.types.document import (
     CreateDocument,
     CreateDocumentAclGrant,
     CreateDocumentArtifact,

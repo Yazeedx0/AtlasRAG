@@ -110,6 +110,52 @@ services:
 
     restart: on-failure
 
+  redis:
+    image: redis:8.4-trixie
+
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf", "--requirepass", "${ATLAS_REDIS_PASSWORD:-atlas_dev_password}"]
+
+    environment:
+      ATLAS_REDIS_PASSWORD: ${ATLAS_REDIS_PASSWORD:-atlas_dev_password}
+
+    ports:
+      - "${ATLAS_REDIS_PORT:-6379}:6379"
+
+    volumes:
+      - redis_data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $$ATLAS_REDIS_PASSWORD ping | grep -q PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+    restart: unless-stopped
+
+  celery-flower:
+    image: mher/flower:2.0.1
+
+    command:
+      - celery
+      - --broker=redis://:${ATLAS_REDIS_PASSWORD:-atlas_dev_password}@redis:6379/0
+      - flower
+      - --port=5555
+
+    environment:
+      FLOWER_BASIC_AUTH: ${ATLAS_FLOWER_BASIC_AUTH:-atlas:atlas_dev_password}
+
+    ports:
+      - "127.0.0.1:${ATLAS_FLOWER_PORT:-5555}:5555"
+
+    depends_on:
+      redis:
+        condition: service_healthy
+
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   minio_data:
+  redis_data:

@@ -1,4 +1,9 @@
-from .ingestion import IngestionStatus
+from .ingestion import (
+    ClaimedIngestionItem,
+    IngestionItemState,
+    IngestionRunState,
+    IngestionStatus,
+)
 from .ai_types import (
     AiProvider,
     AiCapability,
@@ -52,6 +57,9 @@ __all__ = [
     "EmbeddingInputType",
     "GeneratedText",
     "RankedDocument",
-    "IngestionStatus"
+    "ClaimedIngestionItem",
+    "IngestionItemState",
+    "IngestionRunState",
+    "IngestionStatus",
 
 ]

@@ -114,12 +114,8 @@ name = "Modules are independent of each other"
 type = "independence"
 modules = [
     "atlasrag.modules.identity",
-    "atlasrag.modules.documents",
     "atlasrag.modules.ingestion",
-    "atlasrag.modules.retrieval",
-    "atlasrag.modules.answering",
-    "atlasrag.modules.conversations",
-    "atlasrag.modules.feedback",
+    "atlasrag.modules.knowledge",
 ]
 
 [[tool.importlinter.contracts]]

@@ -1,7 +1,11 @@
-from fastapi import APIRouter, Response, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Response, status
 from src import get_settings
 
+from apps.api.dependencies.health import get_readiness_service
 from apps.api.schemas.health import LivenessResponse, ReadinessResponse
+from atlasrag.platform.health import ReadinessService
 
 settings = get_settings()
 
@@ -18,12 +22,19 @@ async def liveness() -> LivenessResponse:
     )
 
 
-@router.get("/ready", summary="Readiness probe")
-async def readiness(response: Response) -> ReadinessResponse:
-   
-    checks: dict[str, str] = {}
+@router.get(
+    "/ready",
+    status_code=status.HTTP_200_OK,
+    summary="Readiness probe",
+)
+async def readiness(
+    response: Response,
+    service: Annotated[ReadinessService, Depends(get_readiness_service)],
+) -> ReadinessResponse:
+    report = await service.check()
+    checks = {"database": "ok" if report.database_ready else "unavailable"}
 
-    if any(result != "ok" for result in checks.values()):
+    if not report.ready:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
         return ReadinessResponse(status="degraded", checks=checks)
 

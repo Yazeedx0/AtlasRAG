@@ -86,7 +86,7 @@ class Settings(BaseSettings):
     MAX_FILE_SIZE_BYTES: int = Field(default=50 * 1024 * 1024, gt=0)
     STORAGE_PROVIDER: str = Field(default="s3", min_length=1)
 
-    CELERY_BROKER_URL: str = Field(min_length=1)
+    CELERY_BROKER_URL: str = Field(default="redis://localhost:6379/0", min_length=1)
     OUTBOX_PUBLISH_BATCH_SIZE: int = Field(default=100, ge=1, le=1000)
     OUTBOX_PUBLISH_LEASE_SECONDS: int = Field(default=60, ge=1)
 

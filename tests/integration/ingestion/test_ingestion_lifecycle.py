@@ -374,7 +374,7 @@ async def test_owner_can_mark_failed(identity_database) -> None:
 
 
 @pytest.mark.asyncio
-async def test_owner_can_release_for_retry(identity_database) -> None:
+async def test_owner_can_schedule_retry(identity_database) -> None:
     _, session_factory = identity_database
 
     async with session_factory() as session:
@@ -385,7 +385,7 @@ async def test_owner_can_release_for_retry(identity_database) -> None:
         claim = await service.claim(item_id=item_id)
         assert claim is not None
 
-        released = await service.release_for_retry(
+        released = await service.schedule_retry(
             item_id=item_id,
             attempt_number=claim.attempt_number,
             error_code="provider_unavailable",
@@ -401,7 +401,44 @@ async def test_owner_can_release_for_retry(identity_database) -> None:
 
 
 @pytest.mark.asyncio
-async def test_stale_attempt_cannot_release(identity_database) -> None:
+async def test_scheduling_retry_releases_item_and_enqueues_a_new_outbox_job(
+    identity_database,
+) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+        claim = await service.claim(item_id=item_id)
+        assert claim is not None
+
+        scheduled = await service.schedule_retry(
+            item_id=item_id,
+            attempt_number=claim.attempt_number,
+            error_code="provider_unavailable",
+        )
+        item = await service.find_item(item_id=item_id)
+        outbox_jobs = (
+            await session.execute(
+                select(JobOutbox).where(
+                    JobOutbox.job_type == JobType.PROCESS_INGESTION_ITEM.value,
+                    JobOutbox.aggregate_id == item_id,
+                )
+            )
+        ).scalars().all()
+
+    assert scheduled is True
+    assert item is not None
+    assert item.status is IngestionStatus.PENDING
+    assert item.claimed_at is None
+    assert item.lease_expires_at is None
+    assert len(outbox_jobs) == 2
+    assert all(job.payload == {"ingestion_item_id": str(item_id)} for job in outbox_jobs)
+
+
+@pytest.mark.asyncio
+async def test_stale_attempt_cannot_schedule_retry(identity_database) -> None:
     _, session_factory = identity_database
 
     async with session_factory() as session:
@@ -415,16 +452,17 @@ async def test_stale_attempt_cannot_release(identity_database) -> None:
         clock.advance(LEASE_DURATION + timedelta(seconds=1))
         await service.claim(item_id=item_id)
 
-        released = await service.release_for_retry(
+        released = await service.schedule_retry(
             item_id=item_id,
             attempt_number=first.attempt_number,
+            error_code="provider_unavailable",
         )
 
     assert released is False
 
 
 @pytest.mark.asyncio
-async def test_released_item_can_be_claimed_again(identity_database) -> None:
+async def test_retry_scheduled_item_can_be_claimed_again(identity_database) -> None:
     _, session_factory = identity_database
 
     async with session_factory() as session:
@@ -434,9 +472,10 @@ async def test_released_item_can_be_claimed_again(identity_database) -> None:
 
         first = await service.claim(item_id=item_id)
         assert first is not None
-        await service.release_for_retry(
+        await service.schedule_retry(
             item_id=item_id,
             attempt_number=first.attempt_number,
+            error_code="provider_unavailable",
         )
 
         clock.advance(timedelta(seconds=5))
@@ -481,9 +520,10 @@ async def test_max_attempts_prevents_another_claim(identity_database) -> None:
         for _ in range(MAX_ATTEMPTS):
             claim = await service.claim(item_id=item_id)
             assert claim is not None
-            await service.release_for_retry(
+            await service.schedule_retry(
                 item_id=item_id,
                 attempt_number=claim.attempt_number,
+                error_code="provider_unavailable",
             )
             clock.advance(timedelta(seconds=1))
 
@@ -498,7 +538,7 @@ async def test_max_attempts_prevents_another_claim(identity_database) -> None:
 
 
 @pytest.mark.asyncio
-async def test_release_on_final_attempt_fails_instead_of_stranding(
+async def test_scheduling_retry_on_final_attempt_fails_instead_of_stranding(
     identity_database,
 ) -> None:
     _, session_factory = identity_database
@@ -511,9 +551,10 @@ async def test_release_on_final_attempt_fails_instead_of_stranding(
         for _ in range(MAX_ATTEMPTS - 1):
             claim = await service.claim(item_id=item_id)
             assert claim is not None
-            released = await service.release_for_retry(
+            released = await service.schedule_retry(
                 item_id=item_id,
                 attempt_number=claim.attempt_number,
+                error_code="provider_unavailable",
             )
             assert released is True
             clock.advance(timedelta(seconds=1))
@@ -522,7 +563,7 @@ async def test_release_on_final_attempt_fails_instead_of_stranding(
         assert final is not None
         assert final.attempt_number == MAX_ATTEMPTS
 
-        released = await service.release_for_retry(
+        released = await service.schedule_retry(
             item_id=item_id,
             attempt_number=final.attempt_number,
             error_code="provider_unavailable",
@@ -553,9 +594,10 @@ async def test_stranded_pending_item_is_never_produced_by_retry_loop(
             claim = await service.claim(item_id=item_id)
             if claim is None:
                 break
-            await service.release_for_retry(
+            await service.schedule_retry(
                 item_id=item_id,
                 attempt_number=claim.attempt_number,
+                error_code="provider_unavailable",
             )
             clock.advance(timedelta(seconds=1))
 

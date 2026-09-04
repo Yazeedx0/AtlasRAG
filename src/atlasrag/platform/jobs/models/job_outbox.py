@@ -8,7 +8,6 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
-    UniqueConstraint,
     func,
     text,
 )
@@ -46,7 +45,6 @@ class JobOutbox(Base):
             "AND length(btrim(failure_code)) > 0)",
             name="terminal_failure_complete",
         ),
-        UniqueConstraint("job_type", "aggregate_id", name="uq_job_outbox_type_aggregate"),
         Index(
             "ix_job_outbox_unpublished_created_at",
             "created_at",

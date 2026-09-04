@@ -104,12 +104,12 @@ class IngestionLifecycleService:
                 await uow.commit()
             return rowcount == 1
 
-    async def release_for_retry(
+    async def schedule_retry(
         self,
         *,
         item_id: uuid.UUID,
         attempt_number: int,
-        error_code: str | None = None,
+        error_code: str,
         error_message: str | None = None,
     ) -> bool:
         async with self._uow_factory() as uow:
@@ -129,6 +129,13 @@ class IngestionLifecycleService:
                     error_code=error_code,
                     error_message=error_message,
                 )
+                if rowcount == 1:
+                    await uow.outbox.enqueue(
+                        job_id=uuid.uuid4(),
+                        job_type=JobType.PROCESS_INGESTION_ITEM,
+                        aggregate_id=item_id,
+                        payload={"ingestion_item_id": str(item_id)},
+                    )
             if rowcount == 1:
                 await uow.commit()
             return rowcount == 1

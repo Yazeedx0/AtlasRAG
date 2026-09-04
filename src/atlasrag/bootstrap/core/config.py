@@ -1,7 +1,7 @@
 from enum import Enum
 from functools import lru_cache
 
-from pydantic import AnyHttpUrl, Field, PostgresDsn
+from pydantic import AnyHttpUrl, Field, PostgresDsn, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from atlasrag.contracts.types.ai_types import AiProvider
@@ -89,6 +89,8 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: str = Field(default="redis://localhost:6379/0", min_length=1)
     OUTBOX_PUBLISH_BATCH_SIZE: int = Field(default=100, ge=1, le=1000)
     OUTBOX_PUBLISH_LEASE_SECONDS: int = Field(default=60, ge=1)
+    INGESTION_LEASE_SECONDS: int = Field(gt=0)
+    INGESTION_HEARTBEAT_SECONDS: int = Field(gt=0)
 
     model_config = SettingsConfigDict(
         env_prefix="ATLAS_",
@@ -96,6 +98,15 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore"
     )
+
+    @model_validator(mode="after")
+    def validate_ingestion_lease_settings(self) -> "Settings":
+        if self.INGESTION_HEARTBEAT_SECONDS >= self.INGESTION_LEASE_SECONDS:
+            raise ValueError(
+                "INGESTION_HEARTBEAT_SECONDS must be less than "
+                "INGESTION_LEASE_SECONDS"
+            )
+        return self
 
 
 @lru_cache

@@ -8,6 +8,8 @@ from atlasrag.contracts.jobs import JobOutboxUnitOfWork
 from atlasrag.contracts.types.jobs import ClaimedOutboxJob
 from atlasrag.platform.jobs.config import TASK_BY_JOB_TYPE
 
+UNKNOWN_JOB_TYPE_FAILURE_CODE = "unknown_job_type"
+
 
 class TaskDispatcher(Protocol):
     def publish(self, *, task_name: str, payload: dict[str, object]) -> None:
@@ -21,6 +23,7 @@ class OutboxPublishReport:
     dispatch_failures: int
     unknown_job_types: int
     unconfirmed_publications: int
+    unconfirmed_terminal_failures: int
 
 
 class OutboxPublisher:
@@ -43,12 +46,18 @@ class OutboxPublisher:
         dispatch_failures = 0
         unknown_job_types = 0
         unconfirmed_publications = 0
+        unconfirmed_terminal_failures = 0
 
         for job in jobs:
             task_name = TASK_BY_JOB_TYPE.get(job.job_type)
             if task_name is None:
-                await self._release_claim(job=job, error_code="unknown_job_type")
+                marked_failed = await self._mark_failed(
+                    job=job,
+                    failure_code=UNKNOWN_JOB_TYPE_FAILURE_CODE,
+                )
                 unknown_job_types += 1
+                if not marked_failed:
+                    unconfirmed_terminal_failures += 1
                 continue
 
             try:
@@ -76,6 +85,7 @@ class OutboxPublisher:
             dispatch_failures=dispatch_failures,
             unknown_job_types=unknown_job_types,
             unconfirmed_publications=unconfirmed_publications,
+            unconfirmed_terminal_failures=unconfirmed_terminal_failures,
         )
 
     async def _claim(self, *, limit: int) -> tuple[ClaimedOutboxJob, ...]:
@@ -111,3 +121,20 @@ class OutboxPublisher:
             if released:
                 await uow.commit()
             return released
+
+    async def _mark_failed(
+        self,
+        *,
+        job: ClaimedOutboxJob,
+        failure_code: str,
+    ) -> bool:
+        async with self._uow_factory() as uow:
+            marked = await uow.outbox.mark_failed(
+                job_id=job.id,
+                attempt_number=job.attempt_number,
+                failed_at=self._clock(),
+                failure_code=failure_code,
+            )
+            if marked:
+                await uow.commit()
+            return marked

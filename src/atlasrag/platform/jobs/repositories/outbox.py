@@ -48,6 +48,7 @@ class OutboxRepository:
             select(JobOutbox.id)
             .where(
                 JobOutbox.published_at.is_(None),
+                JobOutbox.failed_at.is_(None),
                 or_(
                     JobOutbox.lease_expires_at.is_(None),
                     JobOutbox.lease_expires_at <= self._db_time_source(),
@@ -108,6 +109,28 @@ class OutboxRepository:
         result = await self._session.execute(statement)
         return result.rowcount == 1
 
+    async def mark_failed(
+        self,
+        *,
+        job_id: uuid.UUID,
+        attempt_number: int,
+        failed_at: datetime,
+        failure_code: str,
+    ) -> bool:
+        statement = (
+            update(JobOutbox)
+            .where(*self._owned_by(job_id=job_id, attempt_number=attempt_number))
+            .values(
+                failed_at=failed_at,
+                failure_code=failure_code,
+                claimed_at=None,
+                lease_expires_at=None,
+                last_error=None,
+            )
+        )
+        result = await self._session.execute(statement)
+        return result.rowcount == 1
+
     async def release_publish_claim(
         self,
         *,
@@ -136,6 +159,7 @@ class OutboxRepository:
         return (
             JobOutbox.id == job_id,
             JobOutbox.published_at.is_(None),
+            JobOutbox.failed_at.is_(None),
             JobOutbox.attempt_count == attempt_number,
             JobOutbox.lease_expires_at > self._db_time_source(),
         )

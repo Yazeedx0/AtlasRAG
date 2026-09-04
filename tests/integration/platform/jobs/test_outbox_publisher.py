@@ -135,7 +135,7 @@ async def test_broker_failure_keeps_outbox_row_unpublished(identity_database) ->
 
 
 @pytest.mark.asyncio
-async def test_unknown_job_type_is_not_dispatched(identity_database) -> None:
+async def test_unknown_job_type_is_marked_failed_and_not_reclaimed(identity_database) -> None:
     _, session_factory = identity_database
     dispatcher = RecordingDispatcher()
     publisher = make_publisher(session_factory, dispatcher)
@@ -155,13 +155,23 @@ async def test_unknown_job_type_is_not_dispatched(identity_database) -> None:
     report = await publisher.publish_pending(limit=10)
 
     assert report.unknown_job_types == 1
+    assert report.unconfirmed_terminal_failures == 0
     assert dispatcher.published == []
 
     async with session_factory() as session:
         outbox_job = await get_outbox_job(session, item_id=item_id)
 
     assert outbox_job.published_at is None
-    assert outbox_job.last_error == "unknown_job_type"
+    assert outbox_job.failed_at is not None
+    assert outbox_job.failure_code == "unknown_job_type"
+    assert outbox_job.last_error is None
+    assert outbox_job.claimed_at is None
+    assert outbox_job.lease_expires_at is None
+
+    second_report = await publisher.publish_pending(limit=10)
+
+    assert second_report.claimed == 0
+    assert second_report.unknown_job_types == 0
 
 
 @pytest.mark.asyncio

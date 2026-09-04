@@ -32,16 +32,30 @@ class JobOutbox(Base):
             "published_at IS NULL OR lease_expires_at IS NULL",
             name="published_job_has_no_lease",
         ),
+        CheckConstraint(
+            "failed_at IS NULL OR lease_expires_at IS NULL",
+            name="failed_job_has_no_lease",
+        ),
+        CheckConstraint(
+            "NOT (published_at IS NOT NULL AND failed_at IS NOT NULL)",
+            name="published_or_failed",
+        ),
+        CheckConstraint(
+            "(failed_at IS NULL AND failure_code IS NULL) OR "
+            "(failed_at IS NOT NULL AND failure_code IS NOT NULL "
+            "AND length(btrim(failure_code)) > 0)",
+            name="terminal_failure_complete",
+        ),
         UniqueConstraint("job_type", "aggregate_id", name="uq_job_outbox_type_aggregate"),
         Index(
             "ix_job_outbox_unpublished_created_at",
             "created_at",
-            postgresql_where=text("published_at IS NULL"),
+            postgresql_where=text("published_at IS NULL AND failed_at IS NULL"),
         ),
         Index(
             "ix_job_outbox_unpublished_lease_expires_at",
             "lease_expires_at",
-            postgresql_where=text("published_at IS NULL"),
+            postgresql_where=text("published_at IS NULL AND failed_at IS NULL"),
         ),
         {"schema": "platform"},
     )
@@ -66,6 +80,8 @@ class JobOutbox(Base):
         server_default=func.now(),
     )
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    failed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    failure_code: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     attempt_count: Mapped[int] = mapped_column(
         Integer,
@@ -75,4 +91,7 @@ class JobOutbox(Base):
     )
     last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
     claimed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    lease_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )

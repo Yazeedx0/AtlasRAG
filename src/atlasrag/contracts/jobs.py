@@ -44,6 +44,16 @@ class JobOutboxRepository(Protocol):
     ) -> bool:
         ...
 
+    async def mark_failed(
+        self,
+        *,
+        job_id: UUID,
+        attempt_number: int,
+        failed_at: datetime,
+        failure_code: str,
+    ) -> bool:
+        ...
+
 
 class JobOutboxUnitOfWork(Protocol):
     outbox: JobOutboxRepository

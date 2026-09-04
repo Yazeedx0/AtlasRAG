@@ -46,6 +46,7 @@ def publish_outbox(self: Task) -> None:
         dispatch_failures=report.dispatch_failures,
         unknown_job_types=report.unknown_job_types,
         unconfirmed_publications=report.unconfirmed_publications,
+        unconfirmed_terminal_failures=report.unconfirmed_terminal_failures,
     )
 
 

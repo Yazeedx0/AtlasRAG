@@ -16,6 +16,7 @@ from atlasrag.modules.identity import models as _identity_models  # noqa: F401
 from atlasrag.modules.ingestion import models as _ingestion_models  # noqa: F401
 from atlasrag.modules.knowledge import models as _knowledge_models  # noqa: F401
 from atlasrag.platform.database import Base
+from atlasrag.platform.jobs import models as _job_models  # noqa: F401
 
 
 def _asyncpg_url(url: str) -> str:
@@ -46,6 +47,7 @@ async def identity_database(
     async with engine.begin() as connection:
         await connection.execute(text("CREATE SCHEMA IF NOT EXISTS iam"))
         await connection.execute(text("CREATE SCHEMA IF NOT EXISTS knowledge"))
+        await connection.execute(text("CREATE SCHEMA IF NOT EXISTS platform"))
         await connection.execute(text("CREATE EXTENSION IF NOT EXISTS btree_gist"))
         await connection.run_sync(Base.metadata.drop_all)
         await connection.run_sync(Base.metadata.create_all)

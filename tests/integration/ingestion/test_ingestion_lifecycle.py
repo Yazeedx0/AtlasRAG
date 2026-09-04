@@ -3,13 +3,15 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 import pytest
-from sqlalchemy import literal
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import literal, select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from atlasrag.contracts.types.ingestion import IngestionStatus
+from atlasrag.contracts.types.jobs import JobType
 from atlasrag.modules.ingestion.repositories import (
     MAX_ATTEMPTS_EXCEEDED,
     IngestionRepository,
+    make_ingestion_unit_of_work_factory,
 )
 from atlasrag.modules.ingestion.services.ingestion_lifecycle import (
     IngestionLifecycleService,
@@ -19,6 +21,7 @@ from atlasrag.modules.knowledge.models import (
     DocumentArtifact,
     DocumentVersion,
 )
+from atlasrag.platform.jobs.models import JobOutbox
 
 LEASE_DURATION = timedelta(minutes=2)
 MAX_ATTEMPTS = 3
@@ -76,8 +79,18 @@ def make_service(
     session: AsyncSession,
     clock: FakeClock,
 ) -> IngestionLifecycleService:
+    if session.bind is None:
+        raise RuntimeError("Test session is not bound to an engine")
+    session_factory = async_sessionmaker(
+        bind=session.bind,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
     return IngestionLifecycleService(
-        IngestionRepository(session, db_time=lambda: literal(clock())),
+        make_ingestion_unit_of_work_factory(
+            session_factory,
+            db_time=lambda: literal(clock()),
+        ),
         lease_duration=LEASE_DURATION,
         max_attempts=MAX_ATTEMPTS,
         clock=clock,
@@ -89,6 +102,7 @@ async def setup_item(
     service: IngestionLifecycleService,
 ) -> UUID:
     artifact_id = await add_artifact(session)
+    await session.commit()
     run_id = await service.create_run(
         configuration={"chunking": {"strategy": "heading_aware_v1"}},
         configuration_hash="b" * 64,
@@ -116,6 +130,30 @@ async def test_pending_item_can_be_claimed(identity_database) -> None:
     assert claim.attempt_number == 1
     assert claim.claimed_at == T0
     assert claim.lease_expires_at == T0 + LEASE_DURATION
+
+
+@pytest.mark.asyncio
+async def test_adding_item_enqueues_ingestion_job_in_outbox(identity_database) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        outbox_job = (
+            await session.execute(
+                select(JobOutbox).where(
+                    JobOutbox.job_type == JobType.PROCESS_INGESTION_ITEM.value,
+                    JobOutbox.aggregate_id == item_id,
+                )
+            )
+        ).scalar_one()
+
+    assert outbox_job.aggregate_id == item_id
+    assert outbox_job.payload == {"ingestion_item_id": str(item_id)}
+    assert outbox_job.attempt_count == 0
+    assert outbox_job.published_at is None
 
 
 @pytest.mark.asyncio

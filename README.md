@@ -11,8 +11,7 @@ AtlasRAG is not "a chatbot over PDFs." It is being built as the access-control a
 document-lifecycle backbone a real enterprise RAG system needs before retrieval quality
 even matters: who a caller really is, what they are allowed to read, and how a document's
 bytes, versions, and derived data relate to one another. Retrieval, ingestion, and answer
-generation are being built on top of that foundation and are not yet complete — see
-[Project status](#project-status) for exactly what exists today.
+generation are being built on top of that foundation and are not yet complete.
 
 ## Key characteristics
 
@@ -30,31 +29,6 @@ generation are being built on top of that foundation and are not yet complete �
   and `audit` schemas designed but not yet migrated.
 - **Provider-neutral AI adapters** — `TextGenerator`, `Embedder`, and `Reranker` contracts
   with OpenAI, Anthropic, Cohere, and Gemini implementations behind them.
-
-## Project status
-
-Implementation status is derived from the code in this repository, not from design
-documents. Design intent that has no corresponding implementation is marked planned.
-
-| Area | Status | Notes |
-|---|---|---|
-| Platform foundation | ✅ Implemented | FastAPI app, async SQLAlchemy 2.0 + Alembic, `contracts → platform → modules → bootstrap → apps` dependency direction enforced by import-linter |
-| Authentication | ✅ Implemented | Keycloak OIDC bearer-token verification, JWKS caching with bounded refresh, stateless resource server (no login/session/refresh endpoints by design) |
-| Local identity | ✅ Implemented | `Principal` / `User` / `UserIdentifier` model, JIT provisioning, principal activate/deactivate/retire lifecycle |
-| Effective-principal resolution | ✅ Implemented | Direct roles + direct and nested group membership, resolved for authorization |
-| IAM authorization (control plane) | ✅ Implemented | Capability grants (e.g. `knowledge.documents.manage`) gate admin/API routes; superadmin policy |
-| Documents & versions | ✅ Implemented | Document CRUD, version lifecycle (`draft → published → withdrawn/archived`) with non-overlapping effective date ranges |
-| Document artifacts | ✅ Implemented | Multipart upload to a draft version, SHA-256 hashing, size limits, MinIO-backed storage |
-| Document ACL (data plane) | ✅ Implemented | Temporal, allow-only `read`/`manage` grants per principal, independent of control-plane capabilities |
-| Ingestion orchestration schema | 🚧 In progress | `ingestion_runs` / `ingestion_items` model claim/lease/heartbeat and single-active-item promotion; no parsing/chunking pipeline wired to it yet |
-| AI provider adapters | 🚧 In progress | Generation/embedding/reranking contracts with OpenAI, Anthropic, Cohere, Gemini clients exist; not yet called from any retrieval or ingestion flow |
-| Chunking & embedding storage | 📋 Planned | `knowledge.chunks`, `embedding_models`, `chunk_embeddings` are designed (see [schema overview](docs/diagrams/schema-overview.md)); no migrations exist yet |
-| Retrieval | 📋 Planned | Hybrid dense/lexical retrieval and reranking are design-stage only |
-| Answer contract / agentic serving | 📋 Planned | `rag` schema (conversations, answer runs, citations, conflicts, feedback) is design-stage only |
-| Background worker | 📋 Planned | `apps/worker` is a scaffolded package with no implementation |
-| Evaluation harness | 📋 Planned | No `evals/` implementation exists in the repository |
-| Observability | 📋 Planned | No tracing/metrics wired into the application |
-| CI/CD | 📋 Planned | No GitHub Actions workflows exist in the repository |
 
 ## Why AtlasRAG exists
 

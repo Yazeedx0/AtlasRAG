@@ -1,3 +1,4 @@
+from .default_processor import DefaultIngestionProcessor
 from .errors import (
     IngestionLeaseLost,
     IngestionWorkerError,
@@ -9,6 +10,7 @@ from .job_handler import IngestionJobHandler
 from .processor import IngestionProcessor
 
 __all__ = [
+    "DefaultIngestionProcessor",
     "IngestionJobHandler",
     "IngestionLeaseLost",
     "IngestionProcessor",

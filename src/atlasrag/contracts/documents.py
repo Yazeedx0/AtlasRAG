@@ -188,6 +188,13 @@ class DocumentVersionRepository(Protocol):
 
 
 class DocumentArtifactRepository(Protocol):
+    async def find_for_ingestion(
+        self,
+        *,
+        artifact_id: UUID,
+    ) -> DocumentArtifactState | None:
+        ...
+
     async def find_by_id(
         self,
         *,

@@ -21,6 +21,16 @@ class ClaimedIngestionItem:
 
 
 @dataclass(frozen=True, slots=True)
+class LoadedArtifact:
+    artifact_id: uuid.UUID
+    content: bytes
+    mime_type: str
+    expected_file_hash: str
+    observed_file_hash: str
+    file_size_bytes: int
+
+
+@dataclass(frozen=True, slots=True)
 class IngestionRunState:
     id: uuid.UUID
     configuration: dict[str, object]
@@ -54,4 +64,5 @@ __all__ = [
     "IngestionItemState",
     "IngestionRunState",
     "IngestionStatus",
+    "LoadedArtifact",
 ]

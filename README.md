@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/atlasrag-logo.png" alt="AtlasRAG logo" width="600">
+</p>
+
 # AtlasRAG
 
 Enterprise knowledge infrastructure: a modular monolith for storing, authorizing, and

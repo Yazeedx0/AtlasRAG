@@ -4,7 +4,10 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from atlasrag.contracts.error.object_storage_errors import ObjectNotFound
+from atlasrag.contracts.error.object_storage_errors import (
+    ObjectNotFound,
+    ObjectStorageUnavailable,
+)
 from atlasrag.contracts.types.authorization import DocumentArtifactStatus
 from atlasrag.contracts.types.document import DocumentArtifactState
 from atlasrag.modules.ingestion.services.artifact_loader import (
@@ -140,6 +143,21 @@ async def test_storage_object_missing_is_propagated() -> None:
     )
 
     with pytest.raises(ObjectNotFound):
+        await loader.load(artifact_id=artifact.artifact_id)
+
+
+@pytest.mark.asyncio
+async def test_temporary_storage_failure_is_propagated() -> None:
+    artifact = make_artifact()
+    storage = FakeObjectStorage(
+        error=ObjectStorageUnavailable(operation="get", key=artifact.storage_key),
+    )
+    loader = ArtifactLoader(
+        artifact_repository=FakeArtifactRepository(artifact),
+        object_storage=storage,
+    )
+
+    with pytest.raises(ObjectStorageUnavailable):
         await loader.load(artifact_id=artifact.artifact_id)
 
 

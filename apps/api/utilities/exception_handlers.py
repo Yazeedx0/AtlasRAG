@@ -25,11 +25,12 @@ from atlasrag.contracts.error.document_errors import (
     DocumentVersionNotFound,
     DocumentVersionOverlap,
 )
+from atlasrag.contracts.error.extraction_errors import ExtractionFailed
 from atlasrag.contracts.error.identity_errors import (
     GroupCycleDetected,
-    GroupMemberTypeNotAllowed,
     GroupMembershipAlreadyExists,
     GroupMembershipNotFound,
+    GroupMemberTypeNotAllowed,
     GroupPrincipalRequired,
     GroupSelfMembership,
     InvalidPrincipalType,
@@ -41,6 +42,7 @@ from atlasrag.contracts.error.identity_errors import (
     RoleAssignmentRoleNotFound,
     RoleAssignmentUserNotFound,
 )
+from atlasrag.contracts.error.object_storage_errors import ObjectNotFound
 from atlasrag.contracts.error.permission_errors import (
     LastSuperadminViolation,
     PermissionGrantConflict,
@@ -50,6 +52,10 @@ from atlasrag.contracts.error.permission_errors import (
     PermissionTargetNotFound,
     PermissionTargetRetired,
     ProtectedSuperadminRole,
+)
+from atlasrag.modules.ingestion.services.artifact_loader import (
+    ArtifactIntegrityMismatch,
+    ArtifactUnavailableForIngestion,
 )
 
 
@@ -74,6 +80,26 @@ async def handle_conflict(
 
 
 async def handle_document_validation_error(
+    request: Request,
+    error: Exception,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+        content={"detail": str(error)},
+    )
+
+
+async def handle_bad_gateway(
+    request: Request,
+    error: Exception,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_502_BAD_GATEWAY,
+        content={"detail": str(error)},
+    )
+
+
+async def handle_unprocessable_source(
     request: Request,
     error: Exception,
 ) -> JSONResponse:
@@ -150,3 +176,10 @@ def register_exception_handlers(application: FastAPI) -> None:
         DocumentArtifactTooLarge,
         handle_payload_too_large,
     )
+    for error_type in (ArtifactUnavailableForIngestion, ObjectNotFound):
+        application.add_exception_handler(error_type, handle_not_found)
+    application.add_exception_handler(
+        ArtifactIntegrityMismatch,
+        handle_unprocessable_source,
+    )
+    application.add_exception_handler(ExtractionFailed, handle_bad_gateway)

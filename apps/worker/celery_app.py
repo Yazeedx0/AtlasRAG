@@ -9,6 +9,9 @@ create_celery_app(
     database_echo=settings.DATABASE_ECHO,
     outbox_publish_batch_size=settings.OUTBOX_PUBLISH_BATCH_SIZE,
     outbox_publish_lease_seconds=settings.OUTBOX_PUBLISH_LEASE_SECONDS,
+    ingestion_lease_seconds=settings.INGESTION_LEASE_SECONDS,
+    ingestion_heartbeat_seconds=settings.INGESTION_HEARTBEAT_SECONDS,
+    ingestion_max_attempts=settings.INGESTION_MAX_ATTEMPTS,
 )
 
 __all__ = ["celery_app"]

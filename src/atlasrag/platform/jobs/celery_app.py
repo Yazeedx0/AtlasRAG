@@ -26,6 +26,9 @@ def create_celery_app(
     database_echo: bool,
     outbox_publish_batch_size: int,
     outbox_publish_lease_seconds: int,
+    ingestion_lease_seconds: int = 60,
+    ingestion_heartbeat_seconds: int = 20,
+    ingestion_max_attempts: int = 3,
 ) -> Celery:
     celery_app.conf.update(
         broker_url=broker_url,
@@ -40,6 +43,9 @@ def create_celery_app(
         atlas_database_echo=database_echo,
         atlas_outbox_publish_batch_size=outbox_publish_batch_size,
         atlas_outbox_publish_lease_seconds=outbox_publish_lease_seconds,
+        atlas_ingestion_lease_seconds=ingestion_lease_seconds,
+        atlas_ingestion_heartbeat_seconds=ingestion_heartbeat_seconds,
+        atlas_ingestion_max_attempts=ingestion_max_attempts,
         task_default_queue=INGESTION_QUEUE,
         task_queues=(
             Queue(INGESTION_QUEUE),

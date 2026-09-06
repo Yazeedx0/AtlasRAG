@@ -11,13 +11,15 @@ from atlasrag.contracts.types.extraction import (
 )
 from atlasrag.contracts.types.ingestion import LoadedArtifact
 
+NO_FALLBACK_CONFIGURED = "no_fallback_configured"
+
 
 class ExtractionPipeline:
     def __init__(
         self,
         *,
         primary: DocumentExtractor,
-        fallback: DocumentExtractor,
+        fallback: DocumentExtractor | None,
         quality_gate: ExtractionQualityGate,
         primary_method: ExtractionMethod = ExtractionMethod.OPENAI_OCR,
         fallback_method: ExtractionMethod = ExtractionMethod.VLM,
@@ -61,6 +63,13 @@ class ExtractionPipeline:
         language_code: str | None,
         primary_error: ExtractionProviderTransientError | ExtractionProviderPermanentError,
     ) -> ExtractionResult:
+        if self._fallback is None:
+            raise ExtractionFailed(
+                primary_reason=primary_error.reason,
+                fallback_reason=NO_FALLBACK_CONFIGURED,
+                retryable=isinstance(primary_error, ExtractionProviderTransientError),
+            ) from primary_error
+
         try:
             document = await self._fallback.extract(artifact=artifact)
         except ExtractionProviderTransientError as fallback_error:
@@ -106,4 +115,4 @@ class ExtractionPipeline:
         )
 
 
-__all__ = ["ExtractionPipeline"]
+__all__ = ["NO_FALLBACK_CONFIGURED", "ExtractionPipeline"]

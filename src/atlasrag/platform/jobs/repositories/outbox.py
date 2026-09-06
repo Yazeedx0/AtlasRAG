@@ -37,6 +37,27 @@ class OutboxRepository:
             )
         )
 
+    async def discard_pending_for_aggregate(
+        self,
+        *,
+        job_type: JobType,
+        aggregate_id: uuid.UUID,
+        failed_at: datetime,
+        failure_code: str,
+    ) -> int:
+        statement = (
+            update(JobOutbox)
+            .where(
+                JobOutbox.job_type == job_type.value,
+                JobOutbox.aggregate_id == aggregate_id,
+                JobOutbox.published_at.is_(None),
+                JobOutbox.failed_at.is_(None),
+            )
+            .values(failed_at=failed_at, failure_code=failure_code)
+        )
+        result = await self._session.execute(statement)
+        return result.rowcount
+
     async def claim_unpublished_batch(
         self,
         *,

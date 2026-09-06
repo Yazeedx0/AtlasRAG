@@ -11,6 +11,8 @@ from atlasrag.contracts.types.ingestion import (
 from atlasrag.contracts.types.jobs import JobType
 from atlasrag.modules.ingestion.repositories import MAX_ATTEMPTS_EXCEEDED
 
+SUPERSEDED_BY_RETRY = "superseded_by_retry"
+
 
 class IngestionLifecycleService:
     def __init__(
@@ -130,6 +132,12 @@ class IngestionLifecycleService:
                     error_message=error_message,
                 )
                 if rowcount == 1:
+                    await uow.outbox.discard_pending_for_aggregate(
+                        job_type=JobType.PROCESS_INGESTION_ITEM,
+                        aggregate_id=item_id,
+                        failed_at=self._clock(),
+                        failure_code=SUPERSEDED_BY_RETRY,
+                    )
                     await uow.outbox.enqueue(
                         job_id=uuid.uuid4(),
                         job_type=JobType.PROCESS_INGESTION_ITEM,
@@ -156,6 +164,26 @@ class IngestionLifecycleService:
                 now=self._clock(),
                 error_code=error_code,
                 error_message=error_message,
+                execution_metadata=execution_metadata,
+            )
+            if rowcount == 1:
+                await uow.commit()
+            return rowcount == 1
+
+    async def mark_completed(
+        self,
+        *,
+        item_id: uuid.UUID,
+        attempt_number: int,
+        observed_file_hash: str,
+        execution_metadata: dict[str, object],
+    ) -> bool:
+        async with self._uow_factory() as uow:
+            rowcount = await uow.ingestion.mark_completed(
+                item_id=item_id,
+                attempt_number=attempt_number,
+                now=self._clock(),
+                observed_file_hash=observed_file_hash,
                 execution_metadata=execution_metadata,
             )
             if rowcount == 1:

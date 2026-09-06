@@ -17,6 +17,16 @@ class JobOutboxRepository(Protocol):
     ) -> None:
         ...
 
+    async def discard_pending_for_aggregate(
+        self,
+        *,
+        job_type: JobType,
+        aggregate_id: UUID,
+        failed_at: datetime,
+        failure_code: str,
+    ) -> int:
+        ...
+
     async def claim_unpublished_batch(
         self,
         *,

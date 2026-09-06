@@ -78,6 +78,17 @@ class IngestionLifecycleRepository(Protocol):
     ) -> int:
         ...
 
+    async def mark_completed(
+        self,
+        *,
+        item_id: UUID,
+        attempt_number: int,
+        now: datetime,
+        observed_file_hash: str,
+        execution_metadata: dict[str, object],
+    ) -> int:
+        ...
+
     async def fail_exhausted_expired_items(
         self,
         *,

@@ -267,6 +267,38 @@ class IngestionRepository:
         result = await self._session.execute(statement)
         return result.rowcount
 
+    async def mark_completed(
+        self,
+        *,
+        item_id: uuid.UUID,
+        attempt_number: int,
+        now: datetime,
+        observed_file_hash: str,
+        execution_metadata: dict[str, object],
+    ) -> int:
+        statement = (
+            update(IngestionItem)
+            .where(
+                *_owned_by(
+                    item_id=item_id,
+                    attempt_number=attempt_number,
+                    db_time=self._db_time_source(),
+                )
+            )
+            .values(
+                status=IngestionStatus.COMPLETED,
+                completed_at=now,
+                claimed_at=None,
+                lease_expires_at=None,
+                observed_file_hash=observed_file_hash,
+                execution_metadata=execution_metadata,
+                error_code=None,
+                error_message=None,
+            )
+        )
+        result = await self._session.execute(statement)
+        return result.rowcount
+
     async def find_expired_items(
         self,
         *,

@@ -2,20 +2,48 @@
   <img src="docs/assets/atlasrag-logo.png" alt="AtlasRAG logo" width="600">
 </p>
 
-# AtlasRAG
+<h1 align="center">AtlasRAG</h1>
+
+<p align="center">Enterprise knowledge infrastructure for secure, lifecycle-aware RAG systems.</p>
+
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license"></a>
+  <img src="https://img.shields.io/badge/python-3.12%2B-blue" alt="Python 3.12 or later">
+  <img src="https://img.shields.io/badge/status-in%20development-orange" alt="In development">
+</p>
 
 Enterprise knowledge infrastructure: a modular monolith for storing, authorizing, and
 (eventually) retrieving company documents, built around document-level access control,
 explicit document lifecycle, and provider-neutral infrastructure boundaries.
-
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-![Python](https://img.shields.io/badge/python-3.12%2B-blue)
 
 AtlasRAG is not "a chatbot over PDFs." It is being built as the access-control and
 document-lifecycle backbone a real enterprise RAG system needs before retrieval quality
 even matters: who a caller really is, what they are allowed to read, and how a document's
 bytes, versions, and derived data relate to one another. Retrieval, ingestion, and answer
 generation are being built on top of that foundation and are not yet complete.
+
+> **Project status:** Identity, authorization, document lifecycle, object storage, and AI
+> provider contracts are implemented. Ingestion execution, retrieval, and answer generation
+> are still in progress.
+
+## Contents
+
+- [Key characteristics](#key-characteristics)
+- [Why AtlasRAG exists](#why-atlasrag-exists)
+- [Architecture](#architecture)
+- [Security model](#security-model)
+- [Knowledge model](#knowledge-model)
+- [Repository structure](#repository-structure)
+- [Tech stack](#tech-stack)
+- [Getting started](#getting-started)
+- [Configuration](#configuration)
+- [Database](#database)
+- [Development commands](#development-commands)
+- [Testing strategy](#testing-strategy)
+- [Roadmap](#roadmap)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Key characteristics
 
@@ -167,10 +195,11 @@ bruno/                   Bruno HTTP collection mirroring the implemented API sur
 tests/                   unit, integration (testcontainers), e2e (scaffolded)
 ```
 
-The dependency direction is `apps/bootstrap → modules → platform → contracts`. Modules
-never import each other; `contracts/` has no dependency on the rest of the codebase, and
-every external system (Keycloak, MinIO, AI providers) is reached only through a `platform/`
-adapter implementing a `contracts/` interface.
+The dependency direction is `apps/bootstrap → modules/platform → contracts`: bootstrap
+composes the application, modules depend on shared contracts, and platform adapters
+implement those contracts. Modules never import each other, `contracts/` has no dependency
+on the rest of the codebase, and every external system (Keycloak, MinIO, AI providers) is
+reached through a `platform/` adapter.
 
 ## Tech stack
 
@@ -198,14 +227,14 @@ Prerequisites: Python ≥ 3.12, [`uv`](https://docs.astral.sh/uv/), Docker with 
 
 ```bash
 uv sync --all-extras --dev
-cp .env.example .env                  # fill in provider keys as needed
-echo 'ATLAS_DATABASE_URL=postgresql+asyncpg://atlas:atlas_dev_password@localhost:5432/atlasrag' >> .env
+cp .env.example .env
+# Add this required setting to .env:
+# ATLAS_DATABASE_URL=postgresql+asyncpg://atlas:atlas_dev_password@localhost:5432/atlasrag
 make dev                              # postgres+pgvector, keycloak, minio
 make migrate                          # apply Alembic migrations
 ```
 
-`ATLAS_DATABASE_URL` is required by `Settings` but is not included in `.env.example`; set it
-explicitly, matching the Postgres credentials in `.env`.
+`ATLAS_DATABASE_URL` must match the Postgres credentials in `.env`.
 
 `make dev` starts every service defined in `infra/docker-compose.yml`: PostgreSQL
 (with the Keycloak database provisioned alongside it), Keycloak (importing the local
@@ -237,6 +266,16 @@ Interactive API docs are served at `/docs`; the versioned application surface li
 `/api/v1`, while `/health` and `/health/ready` are intentionally unversioned. See
 [docs/API.md](docs/API.md) for the full endpoint reference.
 
+The local service exposes these useful entry points:
+
+| URL | Purpose |
+|---|---|
+| `http://localhost:8000/docs` | Interactive OpenAPI documentation |
+| `http://localhost:8000/health` | Liveness check |
+| `http://localhost:8000/health/ready` | Dependency readiness check |
+| `http://localhost:8080/realms/atlasrag` | Local Keycloak realm |
+| `http://localhost:9001` | MinIO console |
+
 ### Get a local bearer token
 
 ```bash
@@ -250,11 +289,12 @@ against `/docs` or a local HTTP client — this client exists only for local dev
 
 Settings are loaded from the environment with the `ATLAS_` prefix (see
 `src/atlasrag/bootstrap/core/config.py` and `.env.example`). Secrets are omitted below.
+`ATLAS_DATABASE_URL` is required and must be added to `.env` after copying the example file.
 
 | Variable | Description | Example |
 |---|---|---|
 | `ATLAS_DISABLE_AUTH` | Bypass token verification (local development only) | `false` |
-| `ATLAS_DATABASE_URL` | PostgreSQL connection string — required, not present in `.env.example` | `postgresql+asyncpg://atlas:...@localhost/atlasrag` |
+| `ATLAS_DATABASE_URL` | PostgreSQL connection string — required | `postgresql+asyncpg://atlas:...@localhost/atlasrag` |
 | `ATLAS_KEYCLOAK_ISSUER` | Trusted OIDC issuer | `http://localhost:8080/realms/atlasrag` |
 | `ATLAS_KEYCLOAK_AUDIENCE` | Expected access-token audience | `atlasrag-api` |
 | `ATLAS_KEYCLOAK_ALGORITHMS` | Accepted JWT signing algorithms | `["RS256"]` |

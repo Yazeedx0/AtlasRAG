@@ -3,6 +3,7 @@ from types import TracebackType
 from typing import Protocol
 from uuid import UUID
 
+from atlasrag.contracts.chunking import ChunkRepository
 from atlasrag.contracts.jobs import JobOutboxRepository
 from atlasrag.contracts.types.ingestion import (
     ClaimedIngestionItem,
@@ -100,6 +101,7 @@ class IngestionLifecycleRepository(Protocol):
 
 class IngestionUnitOfWork(Protocol):
     ingestion: IngestionLifecycleRepository
+    chunks: ChunkRepository
     outbox: JobOutboxRepository
 
     async def __aenter__(self) -> "IngestionUnitOfWork":

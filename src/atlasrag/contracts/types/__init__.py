@@ -1,10 +1,24 @@
-from .ingestion import IngestionStatus
+from .ingestion import (
+    ClaimedIngestionItem,
+    IngestionItemState,
+    IngestionRunState,
+    IngestionStatus,
+    LoadedArtifact,
+)
 from .ai_types import (
     AiProvider,
     AiCapability,
     EmbeddingInputType,
     RankedDocument, 
     GeneratedText
+)
+from .extraction import (
+    ExtractedBlock,
+    ExtractedBlockType,
+    ExtractedDocument,
+    ExtractionMethod,
+    ExtractionQualityAssessment,
+    ExtractionResult,
 )
 from .authentication import AuthenticatedIdentity
 from .authorization import (
@@ -52,6 +66,16 @@ __all__ = [
     "EmbeddingInputType",
     "GeneratedText",
     "RankedDocument",
-    "IngestionStatus"
+    "ExtractedBlock",
+    "ExtractedBlockType",
+    "ExtractedDocument",
+    "ExtractionMethod",
+    "ExtractionQualityAssessment",
+    "ExtractionResult",
+    "ClaimedIngestionItem",
+    "IngestionItemState",
+    "IngestionRunState",
+    "IngestionStatus",
+    "LoadedArtifact",
 
 ]

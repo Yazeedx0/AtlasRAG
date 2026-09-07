@@ -15,6 +15,7 @@ from fastapi import FastAPI
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
+from atlasrag.bootstrap.core.config import get_settings
 from atlasrag.bootstrap.identity import ConfiguredProvisioningPolicy
 from atlasrag.modules.identity.builtin_roles import SUPERADMIN_ROLE_KEY
 from atlasrag.modules.identity.enums import IdentifierType, PrincipalType
@@ -140,6 +141,9 @@ async def auth_api(
     application.include_router(api_router)
     application.state.token_verifier = verifier
     application.dependency_overrides[get_identity_resolver] = override_identity_resolver
+    application.dependency_overrides[get_settings] = lambda: get_settings().model_copy(
+        update={"DISABLE_AUTH": False}
+    )
 
     transport = httpx.ASGITransport(app=application)
     async with oidc_client, httpx.AsyncClient(

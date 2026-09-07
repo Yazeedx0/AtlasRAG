@@ -48,6 +48,10 @@ run-dev: ## Run the API locally with reload
 worker: ## Run the background worker
 	uv run python -m apps.worker.main
 
+.PHONY: beat
+beat: ## Run the Celery beat scheduler for maintenance jobs
+	uv run python -m apps.worker.beat
+
 .PHONY: migrate
 migrate: ## Apply database migrations
 	uv run alembic upgrade head

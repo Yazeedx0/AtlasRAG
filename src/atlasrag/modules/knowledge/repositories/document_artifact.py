@@ -24,6 +24,15 @@ class DocumentArtifactRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
+    async def find_for_ingestion(
+        self,
+        *,
+        artifact_id: UUID,
+    ) -> DocumentArtifactState | None:
+        statement = select(*_artifact_columns()).where(DocumentArtifact.id == artifact_id)
+        row = (await self._session.execute(statement)).one_or_none()
+        return _to_artifact_state(row) if row is not None else None
+
     async def find_by_id(
         self,
         *,

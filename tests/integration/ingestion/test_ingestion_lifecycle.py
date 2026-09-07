@@ -1,0 +1,841 @@
+import asyncio
+from datetime import UTC, datetime, timedelta
+from uuid import UUID, uuid4
+
+import pytest
+from sqlalchemy import literal, select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from atlasrag.contracts.types.ingestion import IngestionStatus
+from atlasrag.contracts.types.jobs import JobType
+from atlasrag.modules.ingestion.repositories import (
+    LEASE_EXPIRED,
+    MAX_ATTEMPTS_EXCEEDED,
+    IngestionRepository,
+    make_ingestion_unit_of_work_factory,
+)
+from atlasrag.modules.ingestion.services.ingestion_lifecycle import (
+    ITEM_FINALIZED,
+    SUPERSEDED_BY_RETRY,
+    IngestionLifecycleService,
+)
+from atlasrag.modules.knowledge.models import (
+    Document,
+    DocumentArtifact,
+    DocumentVersion,
+)
+from atlasrag.platform.jobs.models import JobOutbox
+
+LEASE_DURATION = timedelta(minutes=2)
+MAX_ATTEMPTS = 3
+T0 = datetime(2026, 9, 1, 18, 10, tzinfo=UTC)
+
+
+class FakeClock:
+    def __init__(self, now: datetime) -> None:
+        self._now = now
+
+    def __call__(self) -> datetime:
+        return self._now
+
+    def advance(self, delta: timedelta) -> None:
+        self._now = self._now + delta
+
+
+async def add_artifact(session: AsyncSession) -> UUID:
+    document_id = uuid4()
+    version_id = uuid4()
+    artifact_id = uuid4()
+
+    await session.execute(
+        Document.__table__.insert().values(
+            id=document_id,
+            canonical_key=f"canonical-{document_id}",
+            title="Lifecycle fixture",
+        )
+    )
+    await session.execute(
+        DocumentVersion.__table__.insert().values(
+            id=version_id,
+            document_id=document_id,
+            version_label="v1",
+        )
+    )
+    await session.execute(
+        DocumentArtifact.__table__.insert().values(
+            id=artifact_id,
+            document_version_id=version_id,
+            artifact_key=f"artifact-{artifact_id}",
+            language_code="en",
+            source_name="fixture.pdf",
+            storage_provider="s3",
+            storage_key=f"key/{artifact_id}",
+            mime_type="application/pdf",
+            file_hash="a" * 64,
+            file_size_bytes=1024,
+        )
+    )
+    return artifact_id
+
+
+def make_service(
+    session: AsyncSession,
+    clock: FakeClock,
+) -> IngestionLifecycleService:
+    if session.bind is None:
+        raise RuntimeError("Test session is not bound to an engine")
+    session_factory = async_sessionmaker(
+        bind=session.bind,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
+    return IngestionLifecycleService(
+        make_ingestion_unit_of_work_factory(
+            session_factory,
+            db_time=lambda: literal(clock()),
+        ),
+        lease_duration=LEASE_DURATION,
+        max_attempts=MAX_ATTEMPTS,
+        clock=clock,
+    )
+
+
+async def setup_item(
+    session: AsyncSession,
+    service: IngestionLifecycleService,
+) -> UUID:
+    artifact_id = await add_artifact(session)
+    await session.commit()
+    run_id = await service.create_run(
+        configuration={"chunking": {"strategy": "heading_aware_v1"}},
+        configuration_hash="b" * 64,
+        created_by_principal_id=None,
+    )
+    return await service.add_item(
+        ingestion_run_id=run_id,
+        document_artifact_id=artifact_id,
+    )
+
+
+@pytest.mark.asyncio
+async def test_pending_item_can_be_claimed(identity_database) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        claim = await service.claim(item_id=item_id)
+
+    assert claim is not None
+    assert claim.ingestion_item_id == item_id
+    assert claim.attempt_number == 1
+    assert claim.claimed_at == T0
+    assert claim.lease_expires_at == T0 + LEASE_DURATION
+
+
+@pytest.mark.asyncio
+async def test_adding_item_enqueues_ingestion_job_in_outbox(identity_database) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        outbox_job = (
+            await session.execute(
+                select(JobOutbox).where(
+                    JobOutbox.job_type == JobType.PROCESS_INGESTION_ITEM.value,
+                    JobOutbox.aggregate_id == item_id,
+                )
+            )
+        ).scalar_one()
+
+    assert outbox_job.aggregate_id == item_id
+    assert outbox_job.payload == {"ingestion_item_id": str(item_id)}
+    assert outbox_job.attempt_count == 0
+    assert outbox_job.published_at is None
+
+
+@pytest.mark.asyncio
+async def test_first_claim_sets_started_at(identity_database) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        await service.claim(item_id=item_id)
+        item = await service.find_item(item_id=item_id)
+
+    assert item is not None
+    assert item.started_at == T0
+    assert item.status is IngestionStatus.RUNNING
+
+
+@pytest.mark.asyncio
+async def test_reclaim_does_not_reset_started_at(identity_database) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        await service.claim(item_id=item_id)
+        clock.advance(LEASE_DURATION + timedelta(minutes=1))
+        second = await service.claim(item_id=item_id)
+        item = await service.find_item(item_id=item_id)
+
+    assert second is not None
+    assert item is not None
+    assert item.started_at == T0
+    assert item.claimed_at == T0 + LEASE_DURATION + timedelta(minutes=1)
+
+
+@pytest.mark.asyncio
+async def test_reclaim_increments_fencing_token(identity_database) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        first = await service.claim(item_id=item_id)
+        clock.advance(LEASE_DURATION + timedelta(minutes=1))
+        second = await service.claim(item_id=item_id)
+
+    assert first is not None
+    assert second is not None
+    assert first.attempt_number == 1
+    assert second.attempt_number == 2
+
+
+@pytest.mark.asyncio
+async def test_running_item_with_live_lease_cannot_be_claimed(
+    identity_database,
+) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        await service.claim(item_id=item_id)
+        clock.advance(timedelta(seconds=30))
+        second = await service.claim(item_id=item_id)
+
+    assert second is None
+
+
+@pytest.mark.asyncio
+async def test_expired_running_item_can_be_reclaimed(identity_database) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        await service.claim(item_id=item_id)
+        clock.advance(LEASE_DURATION + timedelta(seconds=1))
+        second = await service.claim(item_id=item_id)
+
+    assert second is not None
+    assert second.attempt_number == 2
+
+
+@pytest.mark.asyncio
+async def test_heartbeat_extends_valid_lease(identity_database) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        claim = await service.claim(item_id=item_id)
+        assert claim is not None
+
+        clock.advance(timedelta(minutes=1))
+        extended = await service.heartbeat(
+            item_id=item_id,
+            attempt_number=claim.attempt_number,
+        )
+        item = await service.find_item(item_id=item_id)
+
+    assert extended is True
+    assert item is not None
+    assert item.lease_expires_at == T0 + timedelta(minutes=1) + LEASE_DURATION
+
+
+@pytest.mark.asyncio
+async def test_stale_attempt_cannot_heartbeat(identity_database) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        first = await service.claim(item_id=item_id)
+        assert first is not None
+
+        clock.advance(LEASE_DURATION + timedelta(seconds=1))
+        await service.claim(item_id=item_id)
+
+        extended = await service.heartbeat(
+            item_id=item_id,
+            attempt_number=first.attempt_number,
+        )
+
+    assert extended is False
+
+
+@pytest.mark.asyncio
+async def test_expired_worker_cannot_heartbeat_before_reclaim(
+    identity_database,
+) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        claim = await service.claim(item_id=item_id)
+        assert claim is not None
+
+        clock.advance(LEASE_DURATION + timedelta(seconds=1))
+        extended = await service.heartbeat(
+            item_id=item_id,
+            attempt_number=claim.attempt_number,
+        )
+
+    assert extended is False
+
+
+@pytest.mark.asyncio
+async def test_stale_attempt_cannot_fail(identity_database) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        first = await service.claim(item_id=item_id)
+        assert first is not None
+
+        clock.advance(LEASE_DURATION + timedelta(seconds=1))
+        await service.claim(item_id=item_id)
+
+        failed = await service.mark_failed(
+            item_id=item_id,
+            attempt_number=first.attempt_number,
+            error_code="extraction_failed",
+        )
+        item = await service.find_item(item_id=item_id)
+
+    assert failed is False
+    assert item is not None
+    assert item.status is IngestionStatus.RUNNING
+
+
+@pytest.mark.asyncio
+async def test_owner_can_mark_failed(identity_database) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        claim = await service.claim(item_id=item_id)
+        assert claim is not None
+
+        failed = await service.mark_failed(
+            item_id=item_id,
+            attempt_number=claim.attempt_number,
+            error_code="artifact_integrity_mismatch",
+            error_message="sha mismatch",
+        )
+        item = await service.find_item(item_id=item_id)
+
+    assert failed is True
+    assert item is not None
+    assert item.status is IngestionStatus.FAILED
+    assert item.completed_at == T0
+    assert item.claimed_at is None
+    assert item.lease_expires_at is None
+    assert item.error_code == "artifact_integrity_mismatch"
+
+
+@pytest.mark.asyncio
+async def test_owner_can_schedule_retry(identity_database) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        claim = await service.claim(item_id=item_id)
+        assert claim is not None
+
+        released = await service.schedule_retry(
+            item_id=item_id,
+            attempt_number=claim.attempt_number,
+            error_code="provider_unavailable",
+        )
+        item = await service.find_item(item_id=item_id)
+
+    assert released is True
+    assert item is not None
+    assert item.status is IngestionStatus.PENDING
+    assert item.claimed_at is None
+    assert item.lease_expires_at is None
+    assert item.attempt_count == 1
+
+
+@pytest.mark.asyncio
+async def test_scheduling_retry_releases_item_and_enqueues_a_new_outbox_job(
+    identity_database,
+) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+        claim = await service.claim(item_id=item_id)
+        assert claim is not None
+
+        scheduled = await service.schedule_retry(
+            item_id=item_id,
+            attempt_number=claim.attempt_number,
+            error_code="provider_unavailable",
+        )
+        item = await service.find_item(item_id=item_id)
+        outbox_jobs = (
+            await session.execute(
+                select(JobOutbox).where(
+                    JobOutbox.job_type == JobType.PROCESS_INGESTION_ITEM.value,
+                    JobOutbox.aggregate_id == item_id,
+                )
+            )
+        ).scalars().all()
+
+    assert scheduled is True
+    assert item is not None
+    assert item.status is IngestionStatus.PENDING
+    assert item.claimed_at is None
+    assert item.lease_expires_at is None
+    assert len(outbox_jobs) == 2
+    assert all(job.payload == {"ingestion_item_id": str(item_id)} for job in outbox_jobs)
+
+
+@pytest.mark.asyncio
+async def test_stale_attempt_cannot_schedule_retry(identity_database) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        first = await service.claim(item_id=item_id)
+        assert first is not None
+
+        clock.advance(LEASE_DURATION + timedelta(seconds=1))
+        await service.claim(item_id=item_id)
+
+        released = await service.schedule_retry(
+            item_id=item_id,
+            attempt_number=first.attempt_number,
+            error_code="provider_unavailable",
+        )
+
+    assert released is False
+
+
+@pytest.mark.asyncio
+async def test_retry_scheduled_item_can_be_claimed_again(identity_database) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        first = await service.claim(item_id=item_id)
+        assert first is not None
+        await service.schedule_retry(
+            item_id=item_id,
+            attempt_number=first.attempt_number,
+            error_code="provider_unavailable",
+        )
+
+        clock.advance(timedelta(seconds=5))
+        second = await service.claim(item_id=item_id)
+
+    assert second is not None
+    assert second.attempt_number == 2
+
+
+@pytest.mark.asyncio
+async def test_failed_item_cannot_be_claimed(identity_database) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        claim = await service.claim(item_id=item_id)
+        assert claim is not None
+        await service.mark_failed(
+            item_id=item_id,
+            attempt_number=claim.attempt_number,
+            error_code="permanent",
+        )
+
+        clock.advance(timedelta(hours=1))
+        again = await service.claim(item_id=item_id)
+
+    assert again is None
+
+
+@pytest.mark.asyncio
+async def test_max_attempts_prevents_another_claim(identity_database) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        for _ in range(MAX_ATTEMPTS):
+            claim = await service.claim(item_id=item_id)
+            assert claim is not None
+            await service.schedule_retry(
+                item_id=item_id,
+                attempt_number=claim.attempt_number,
+                error_code="provider_unavailable",
+            )
+            clock.advance(timedelta(seconds=1))
+
+        exhausted = await service.claim(item_id=item_id)
+        item = await service.find_item(item_id=item_id)
+
+    assert exhausted is None
+    assert item is not None
+    assert item.attempt_count == MAX_ATTEMPTS
+    assert item.status is IngestionStatus.FAILED
+    assert item.error_code == MAX_ATTEMPTS_EXCEEDED
+
+
+@pytest.mark.asyncio
+async def test_scheduling_retry_on_final_attempt_fails_instead_of_stranding(
+    identity_database,
+) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        for _ in range(MAX_ATTEMPTS - 1):
+            claim = await service.claim(item_id=item_id)
+            assert claim is not None
+            released = await service.schedule_retry(
+                item_id=item_id,
+                attempt_number=claim.attempt_number,
+                error_code="provider_unavailable",
+            )
+            assert released is True
+            clock.advance(timedelta(seconds=1))
+
+        final = await service.claim(item_id=item_id)
+        assert final is not None
+        assert final.attempt_number == MAX_ATTEMPTS
+
+        released = await service.schedule_retry(
+            item_id=item_id,
+            attempt_number=final.attempt_number,
+            error_code="provider_unavailable",
+        )
+        item = await service.find_item(item_id=item_id)
+
+    assert released is True
+    assert item is not None
+    assert item.status is IngestionStatus.FAILED
+    assert item.error_code == MAX_ATTEMPTS_EXCEEDED
+    assert item.completed_at == T0 + timedelta(seconds=MAX_ATTEMPTS - 1)
+    assert item.claimed_at is None
+    assert item.lease_expires_at is None
+
+
+@pytest.mark.asyncio
+async def test_stranded_pending_item_is_never_produced_by_retry_loop(
+    identity_database,
+) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        for _ in range(MAX_ATTEMPTS):
+            claim = await service.claim(item_id=item_id)
+            if claim is None:
+                break
+            await service.schedule_retry(
+                item_id=item_id,
+                attempt_number=claim.attempt_number,
+                error_code="provider_unavailable",
+            )
+            clock.advance(timedelta(seconds=1))
+
+        clock.advance(timedelta(days=1))
+        await service.recover_expired_items(limit=10)
+        item = await service.find_item(item_id=item_id)
+
+    assert item is not None
+    assert item.status is not IngestionStatus.PENDING
+    assert item.status is IngestionStatus.FAILED
+
+
+@pytest.mark.asyncio
+async def test_expired_max_attempt_item_becomes_failed(identity_database) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        for _ in range(MAX_ATTEMPTS):
+            claim = await service.claim(item_id=item_id)
+            assert claim is not None
+            clock.advance(LEASE_DURATION + timedelta(seconds=1))
+
+        stuck = await service.find_item(item_id=item_id)
+        assert stuck is not None
+        assert stuck.status is IngestionStatus.RUNNING
+        assert stuck.attempt_count == MAX_ATTEMPTS
+
+        report = await service.recover_expired_items(limit=10)
+        item = await service.find_item(item_id=item_id)
+
+    assert report.scanned == 1
+    assert report.finalized == 1
+    assert report.requeued == 0
+    assert item is not None
+    assert item.status is IngestionStatus.FAILED
+    assert item.error_code == MAX_ATTEMPTS_EXCEEDED
+    assert item.completed_at is not None
+    assert item.claimed_at is None
+    assert item.lease_expires_at is None
+
+
+@pytest.mark.asyncio
+async def test_expired_item_with_attempts_remaining_is_requeued(identity_database) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        await service.claim(item_id=item_id)
+        clock.advance(LEASE_DURATION + timedelta(seconds=1))
+
+        report = await service.recover_expired_items(limit=10)
+        item = await service.find_item(item_id=item_id)
+
+    assert report.scanned == 1
+    assert report.requeued == 1
+    assert report.finalized == 0
+    assert report.skipped == 0
+    assert item is not None
+    assert item.status is IngestionStatus.PENDING
+    assert item.error_code == LEASE_EXPIRED
+    assert item.claimed_at is None
+    assert item.lease_expires_at is None
+    assert item.attempt_count == 1
+
+
+@pytest.mark.asyncio
+async def test_recovering_expired_item_redispatches_through_the_outbox(
+    identity_database,
+) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        await service.claim(item_id=item_id)
+        clock.advance(LEASE_DURATION + timedelta(seconds=1))
+        await service.recover_expired_items(limit=10)
+
+        jobs = (
+            await session.execute(
+                select(JobOutbox)
+                .where(JobOutbox.aggregate_id == item_id)
+                .order_by(JobOutbox.created_at)
+            )
+        ).scalars().all()
+
+    pending = [job for job in jobs if job.failed_at is None and job.published_at is None]
+    assert len(pending) == 1
+    assert pending[0].payload == {"ingestion_item_id": str(item_id)}
+    assert pending[0].job_type == JobType.PROCESS_INGESTION_ITEM.value
+
+    superseded = [job for job in jobs if job.failure_code == SUPERSEDED_BY_RETRY]
+    assert len(superseded) == 1
+
+
+@pytest.mark.asyncio
+async def test_recovery_finalization_discards_pending_outbox_jobs(
+    identity_database,
+) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        for _ in range(MAX_ATTEMPTS):
+            claim = await service.claim(item_id=item_id)
+            assert claim is not None
+            clock.advance(LEASE_DURATION + timedelta(seconds=1))
+
+        await service.recover_expired_items(limit=10)
+
+        jobs = (
+            await session.execute(
+                select(JobOutbox).where(JobOutbox.aggregate_id == item_id)
+            )
+        ).scalars().all()
+
+    assert jobs
+    assert all(job.failed_at is not None or job.published_at is not None for job in jobs)
+    assert any(job.failure_code == ITEM_FINALIZED for job in jobs)
+
+
+@pytest.mark.asyncio
+async def test_requeued_item_can_be_claimed_by_a_new_worker(identity_database) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        first = await service.claim(item_id=item_id)
+        assert first is not None
+        clock.advance(LEASE_DURATION + timedelta(seconds=1))
+        await service.recover_expired_items(limit=10)
+
+        second = await service.claim(item_id=item_id)
+
+    assert second is not None
+    assert second.attempt_number == 2
+
+
+@pytest.mark.asyncio
+async def test_recovery_skips_an_item_reclaimed_by_another_worker(
+    identity_database,
+) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+        repository = IngestionRepository(session, db_time=lambda: literal(clock()))
+
+        await service.claim(item_id=item_id)
+        clock.advance(LEASE_DURATION + timedelta(seconds=1))
+        expired = await repository.find_expired_items(limit=10)
+        assert len(expired) == 1
+
+        reclaimed = await service.claim(item_id=item_id)
+        assert reclaimed is not None
+
+        released = await repository.release_expired_item(
+            item_id=expired[0].id,
+            attempt_number=expired[0].attempt_count,
+            error_code=LEASE_EXPIRED,
+            error_message=None,
+        )
+        item = await service.find_item(item_id=item_id)
+
+    assert released == 0
+    assert item is not None
+    assert item.status is IngestionStatus.RUNNING
+    assert item.attempt_count == 2
+
+
+@pytest.mark.asyncio
+async def test_find_expired_items_returns_only_expired(identity_database) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        repository = IngestionRepository(session, db_time=lambda: literal(clock()))
+
+        expired_id = await setup_item(session, service)
+        live_id = await setup_item(session, service)
+
+        await service.claim(item_id=expired_id)
+        clock.advance(LEASE_DURATION + timedelta(seconds=1))
+        await service.claim(item_id=live_id)
+
+        expired = await repository.find_expired_items(limit=10)
+
+    assert tuple(state.id for state in expired) == (expired_id,)
+
+
+@pytest.mark.asyncio
+async def test_concurrent_claims_yield_exactly_one_winner(identity_database) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+        await session.commit()
+
+    async def attempt_claim() -> object:
+        async with session_factory() as session:
+            service = make_service(session, FakeClock(T0))
+            claim = await service.claim(item_id=item_id)
+            await session.commit()
+            return claim
+
+    results = await asyncio.gather(*(attempt_claim() for _ in range(8)))
+
+    winners = [claim for claim in results if claim is not None]
+    assert len(winners) == 1
+    assert winners[0].attempt_number == 1
+
+    async with session_factory() as session:
+        service = make_service(session, FakeClock(T0))
+        item = await service.find_item(item_id=item_id)
+
+    assert item is not None
+    assert item.attempt_count == 1
+    assert item.status is IngestionStatus.RUNNING

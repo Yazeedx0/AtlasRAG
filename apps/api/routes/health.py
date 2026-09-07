@@ -32,7 +32,11 @@ async def readiness(
     service: Annotated[ReadinessService, Depends(get_readiness_service)],
 ) -> ReadinessResponse:
     report = await service.check()
-    checks = {"database": "ok" if report.database_ready else "unavailable"}
+    checks = {
+        "database": "ok" if report.database_ready else "unavailable",
+        "broker": "ok" if report.broker_ready else "unavailable",
+        "workers": "ok" if report.workers_ready else "unavailable",
+    }
 
     if not report.ready:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE

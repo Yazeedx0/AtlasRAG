@@ -1,7 +1,7 @@
 from enum import Enum
 from functools import lru_cache
 
-from pydantic import AnyHttpUrl, Field, PostgresDsn
+from pydantic import AnyHttpUrl, Field, PostgresDsn, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from atlasrag.contracts.types.ai_types import AiProvider
@@ -57,6 +57,12 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL: str = Field(default="text-embedding-3-small", min_length=1)
     RERANK_PROVIDER: AiProvider = AiProvider.COHERE
     RERANK_MODEL: str = Field(default="rerank-v3.5", min_length=1)
+    OCR_MODEL: str = Field(default="gpt-4o", min_length=1)
+    OCR_MAX_OUTPUT_TOKENS: int = Field(default=16000, gt=0)
+    VLM_MODEL: str = Field(default="gemini-2.0-flash", min_length=1)
+    VLM_MAX_OUTPUT_TOKENS: int = Field(default=16000, gt=0)
+    EXTRACTION_TIMEOUT_SECONDS: float = Field(default=300.0, gt=0)
+    EXTRACTION_MAX_RETRIES: int = Field(default=0, ge=0)
 
     OPENAI_API_KEY: str | None = None
     OPENAI_TIMEOUT_SECONDS: float = 30.0
@@ -86,12 +92,44 @@ class Settings(BaseSettings):
     MAX_FILE_SIZE_BYTES: int = Field(default=50 * 1024 * 1024, gt=0)
     STORAGE_PROVIDER: str = Field(default="s3", min_length=1)
 
+    CELERY_BROKER_URL: str = Field(default="redis://localhost:6379/0", min_length=1)
+    OUTBOX_PUBLISH_BATCH_SIZE: int = Field(default=100, ge=1, le=1000)
+    OUTBOX_PUBLISH_LEASE_SECONDS: int = Field(default=60, ge=1)
+    OUTBOX_PUBLISH_MAX_ATTEMPTS: int = Field(default=5, ge=1)
+    OUTBOX_PUBLISH_BACKOFF_SECONDS: int = Field(default=5, ge=1)
+    OUTBOX_PUBLISH_BACKOFF_MAX_SECONDS: int = Field(default=600, ge=1)
+    OUTBOX_PUBLISH_INTERVAL_SECONDS: int = Field(default=5, ge=1)
+    INGESTION_LEASE_SECONDS: int = Field(gt=0)
+    INGESTION_HEARTBEAT_SECONDS: int = Field(gt=0)
+    INGESTION_MAX_ATTEMPTS: int = Field(default=3, ge=1)
+    INGESTION_LEASE_RECOVERY_BATCH_SIZE: int = Field(default=100, ge=1, le=1000)
+    INGESTION_LEASE_RECOVERY_INTERVAL_SECONDS: int = Field(default=60, ge=1)
+    WORKER_SHUTDOWN_GRACE_SECONDS: int = Field(default=30, ge=1)
+
     model_config = SettingsConfigDict(
         env_prefix="ATLAS_",
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore"
     )
+
+    @model_validator(mode="after")
+    def validate_ingestion_lease_settings(self) -> "Settings":
+        if self.INGESTION_HEARTBEAT_SECONDS >= self.INGESTION_LEASE_SECONDS:
+            raise ValueError(
+                "INGESTION_HEARTBEAT_SECONDS must be less than "
+                "INGESTION_LEASE_SECONDS"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def validate_outbox_backoff_settings(self) -> "Settings":
+        if self.OUTBOX_PUBLISH_BACKOFF_MAX_SECONDS < self.OUTBOX_PUBLISH_BACKOFF_SECONDS:
+            raise ValueError(
+                "OUTBOX_PUBLISH_BACKOFF_MAX_SECONDS must not be less than "
+                "OUTBOX_PUBLISH_BACKOFF_SECONDS"
+            )
+        return self
 
 
 @lru_cache

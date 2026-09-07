@@ -1,7 +1,10 @@
 import aioboto3
-from botocore.exceptions import ClientError
+from botocore.exceptions import BotoCoreError, ClientError
 
-from atlasrag.contracts.error.object_storage_errors import ObjectNotFound
+from atlasrag.contracts.error.object_storage_errors import (
+    ObjectNotFound,
+    ObjectStorageUnavailable,
+)
 
 _NOT_FOUND_ERROR_CODES = frozenset({"NoSuchKey", "404"})
 
@@ -48,15 +51,17 @@ class MinioObjectStorage:
         *,
         key: str,
     ) -> bytes:
-        async with self._session.client(**self._client_kwargs) as client:
-            try:
+        try:
+            async with self._session.client(**self._client_kwargs) as client:
                 response = await client.get_object(Bucket=self._bucket, Key=key)
-            except ClientError as error:
-                if _is_not_found(error):
-                    raise ObjectNotFound(key=key) from error
-                raise
-            async with response["Body"] as body:
-                return await body.read()
+                async with response["Body"] as body:
+                    return await body.read()
+        except ClientError as error:
+            if _is_not_found(error):
+                raise ObjectNotFound(key=key) from error
+            raise ObjectStorageUnavailable(operation="get", key=key) from error
+        except BotoCoreError as error:
+            raise ObjectStorageUnavailable(operation="get", key=key) from error
 
     async def delete(
         self,

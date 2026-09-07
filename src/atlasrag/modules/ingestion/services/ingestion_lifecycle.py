@@ -1,5 +1,6 @@
 import uuid
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from atlasrag.contracts.ingestion import IngestionUnitOfWork
@@ -9,9 +10,18 @@ from atlasrag.contracts.types.ingestion import (
     IngestionRunState,
 )
 from atlasrag.contracts.types.jobs import JobType
-from atlasrag.modules.ingestion.repositories import MAX_ATTEMPTS_EXCEEDED
+from atlasrag.modules.ingestion.repositories import LEASE_EXPIRED, MAX_ATTEMPTS_EXCEEDED
 
 SUPERSEDED_BY_RETRY = "superseded_by_retry"
+ITEM_FINALIZED = "ingestion_item_finalized"
+
+
+@dataclass(frozen=True, slots=True)
+class LeaseRecoveryReport:
+    scanned: int
+    requeued: int
+    finalized: int
+    skipped: int
 
 
 class IngestionLifecycleService:
@@ -167,6 +177,12 @@ class IngestionLifecycleService:
                 execution_metadata=execution_metadata,
             )
             if rowcount == 1:
+                await uow.outbox.discard_pending_for_aggregate(
+                    job_type=JobType.PROCESS_INGESTION_ITEM,
+                    aggregate_id=item_id,
+                    failed_at=self._clock(),
+                    failure_code=ITEM_FINALIZED,
+                )
                 await uow.commit()
             return rowcount == 1
 
@@ -190,12 +206,83 @@ class IngestionLifecycleService:
                 await uow.commit()
             return rowcount == 1
 
-    async def reap_expired_items(self) -> int:
+    async def recover_expired_items(self, *, limit: int) -> LeaseRecoveryReport:
         async with self._uow_factory() as uow:
-            count = await uow.ingestion.fail_exhausted_expired_items(
-                now=self._clock(),
-                max_attempts=self._max_attempts,
+            expired = await uow.ingestion.find_expired_items(limit=limit)
+
+        requeued = 0
+        finalized = 0
+        skipped = 0
+        for item in expired:
+            if item.attempt_count >= self._max_attempts:
+                recovered = await self._finalize_expired_item(item=item)
+                if recovered:
+                    finalized += 1
+            else:
+                recovered = await self._redispatch_expired_item(item=item)
+                if recovered:
+                    requeued += 1
+            if not recovered:
+                skipped += 1
+
+        return LeaseRecoveryReport(
+            scanned=len(expired),
+            requeued=requeued,
+            finalized=finalized,
+            skipped=skipped,
+        )
+
+    async def _redispatch_expired_item(self, *, item: IngestionItemState) -> bool:
+        async with self._uow_factory() as uow:
+            rowcount = await uow.ingestion.release_expired_item(
+                item_id=item.id,
+                attempt_number=item.attempt_count,
+                error_code=LEASE_EXPIRED,
+                error_message=None,
             )
-            if count > 0:
-                await uow.commit()
-            return count
+            if rowcount != 1:
+                return False
+
+            await uow.outbox.discard_pending_for_aggregate(
+                job_type=JobType.PROCESS_INGESTION_ITEM,
+                aggregate_id=item.id,
+                failed_at=self._clock(),
+                failure_code=SUPERSEDED_BY_RETRY,
+            )
+            await uow.outbox.enqueue(
+                job_id=uuid.uuid4(),
+                job_type=JobType.PROCESS_INGESTION_ITEM,
+                aggregate_id=item.id,
+                payload={"ingestion_item_id": str(item.id)},
+            )
+            await uow.commit()
+            return True
+
+    async def _finalize_expired_item(self, *, item: IngestionItemState) -> bool:
+        async with self._uow_factory() as uow:
+            rowcount = await uow.ingestion.fail_expired_item(
+                item_id=item.id,
+                attempt_number=item.attempt_count,
+                now=self._clock(),
+                error_code=MAX_ATTEMPTS_EXCEEDED,
+                error_message=None,
+            )
+            if rowcount != 1:
+                return False
+
+            await uow.outbox.discard_pending_for_aggregate(
+                job_type=JobType.PROCESS_INGESTION_ITEM,
+                aggregate_id=item.id,
+                failed_at=self._clock(),
+                failure_code=ITEM_FINALIZED,
+            )
+            await uow.commit()
+            return True
+
+
+__all__ = [
+    "ITEM_FINALIZED",
+    "SUPERSEDED_BY_RETRY",
+    "IngestionLifecycleService",
+    "LeaseRecoveryReport",
+]

@@ -95,9 +95,16 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: str = Field(default="redis://localhost:6379/0", min_length=1)
     OUTBOX_PUBLISH_BATCH_SIZE: int = Field(default=100, ge=1, le=1000)
     OUTBOX_PUBLISH_LEASE_SECONDS: int = Field(default=60, ge=1)
+    OUTBOX_PUBLISH_MAX_ATTEMPTS: int = Field(default=5, ge=1)
+    OUTBOX_PUBLISH_BACKOFF_SECONDS: int = Field(default=5, ge=1)
+    OUTBOX_PUBLISH_BACKOFF_MAX_SECONDS: int = Field(default=600, ge=1)
+    OUTBOX_PUBLISH_INTERVAL_SECONDS: int = Field(default=5, ge=1)
     INGESTION_LEASE_SECONDS: int = Field(gt=0)
     INGESTION_HEARTBEAT_SECONDS: int = Field(gt=0)
     INGESTION_MAX_ATTEMPTS: int = Field(default=3, ge=1)
+    INGESTION_LEASE_RECOVERY_BATCH_SIZE: int = Field(default=100, ge=1, le=1000)
+    INGESTION_LEASE_RECOVERY_INTERVAL_SECONDS: int = Field(default=60, ge=1)
+    WORKER_SHUTDOWN_GRACE_SECONDS: int = Field(default=30, ge=1)
 
     model_config = SettingsConfigDict(
         env_prefix="ATLAS_",
@@ -112,6 +119,15 @@ class Settings(BaseSettings):
             raise ValueError(
                 "INGESTION_HEARTBEAT_SECONDS must be less than "
                 "INGESTION_LEASE_SECONDS"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def validate_outbox_backoff_settings(self) -> "Settings":
+        if self.OUTBOX_PUBLISH_BACKOFF_MAX_SECONDS < self.OUTBOX_PUBLISH_BACKOFF_SECONDS:
+            raise ValueError(
+                "OUTBOX_PUBLISH_BACKOFF_MAX_SECONDS must not be less than "
+                "OUTBOX_PUBLISH_BACKOFF_SECONDS"
             )
         return self
 

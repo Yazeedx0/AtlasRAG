@@ -4,21 +4,24 @@ from datetime import UTC, datetime, timedelta
 from queue import Queue
 from uuid import UUID, uuid4
 
+import pytest
 from celery import Task
 from celery.contrib.testing.worker import start_worker
 from celery.signals import task_prerun
-from testcontainers.redis import RedisContainer
-
-import pytest
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from testcontainers.redis import RedisContainer
 
 from atlasrag.contracts.types.jobs import ClaimedOutboxJob, JobType
+from atlasrag.platform.jobs.backoff import ExponentialBackoff
 from atlasrag.platform.jobs.celery_app import create_celery_app
 from atlasrag.platform.jobs.celery_dispatcher import CeleryTaskDispatcher
 from atlasrag.platform.jobs.constants import PROCESS_INGESTION_TASK
 from atlasrag.platform.jobs.models import JobOutbox
-from atlasrag.platform.jobs.publisher import OutboxPublisher
+from atlasrag.platform.jobs.publisher import (
+    DISPATCH_ATTEMPTS_EXHAUSTED_FAILURE_CODE,
+    OutboxPublisher,
+)
 from atlasrag.platform.jobs.repositories import OutboxRepository
 from atlasrag.platform.jobs.unit_of_work import make_job_outbox_unit_of_work_factory
 
@@ -51,12 +54,16 @@ def redis_broker_url() -> Iterator[str]:
 def make_publisher(
     session_factory: async_sessionmaker[AsyncSession],
     dispatcher: RecordingDispatcher,
+    *,
+    max_attempts: int = 5,
 ) -> OutboxPublisher:
     return OutboxPublisher(
         make_job_outbox_unit_of_work_factory(session_factory),
         dispatcher,
         lease_duration=timedelta(minutes=1),
         clock=lambda: datetime.now(UTC),
+        max_attempts=max_attempts,
+        backoff=ExponentialBackoff(base=timedelta(seconds=5), maximum=timedelta(minutes=10)),
     )
 
 
@@ -75,6 +82,20 @@ async def add_ingestion_job(
     )
     await session.commit()
     return ingestion_item_id
+
+
+async def clear_next_attempt(
+    session_factory: async_sessionmaker[AsyncSession],
+    *,
+    item_id: UUID,
+) -> None:
+    async with session_factory() as session:
+        await session.execute(
+            update(JobOutbox)
+            .where(JobOutbox.aggregate_id == item_id)
+            .values(next_attempt_at=None)
+        )
+        await session.commit()
 
 
 async def get_outbox_job(session: AsyncSession, *, item_id: UUID) -> JobOutbox:
@@ -125,6 +146,7 @@ async def test_broker_failure_keeps_outbox_row_unpublished(identity_database) ->
     report = await publisher.publish_pending(limit=10)
 
     assert report.dispatch_failures == 1
+    assert report.dead_lettered == 0
 
     async with session_factory() as session:
         outbox_job = await get_outbox_job(session, item_id=item_id)
@@ -132,6 +154,113 @@ async def test_broker_failure_keeps_outbox_row_unpublished(identity_database) ->
     assert outbox_job.published_at is None
     assert outbox_job.attempt_count == 1
     assert outbox_job.last_error == "dispatch_failed:RuntimeError"
+
+
+@pytest.mark.asyncio
+async def test_dispatch_failure_schedules_a_backed_off_next_attempt(
+    identity_database,
+) -> None:
+    _, session_factory = identity_database
+    dispatcher = RecordingDispatcher(RuntimeError("broker unavailable"))
+    publisher = make_publisher(session_factory, dispatcher)
+
+    async with session_factory() as session:
+        item_id = await add_ingestion_job(session)
+
+    before = datetime.now(UTC)
+    await publisher.publish_pending(limit=10)
+
+    async with session_factory() as session:
+        outbox_job = await get_outbox_job(session, item_id=item_id)
+
+    assert outbox_job.next_attempt_at is not None
+    assert outbox_job.next_attempt_at >= before + timedelta(seconds=5)
+    assert outbox_job.claimed_at is None
+    assert outbox_job.lease_expires_at is None
+
+    second_report = await publisher.publish_pending(limit=10)
+
+    assert second_report.claimed == 0
+
+
+@pytest.mark.asyncio
+async def test_backoff_grows_between_consecutive_dispatch_failures(
+    identity_database,
+) -> None:
+    _, session_factory = identity_database
+    dispatcher = RecordingDispatcher(RuntimeError("broker unavailable"))
+    publisher = make_publisher(session_factory, dispatcher)
+
+    async with session_factory() as session:
+        item_id = await add_ingestion_job(session)
+
+    delays: list[timedelta] = []
+    for _ in range(3):
+        released_at = datetime.now(UTC)
+        await publisher.publish_pending(limit=10)
+        async with session_factory() as session:
+            outbox_job = await get_outbox_job(session, item_id=item_id)
+        assert outbox_job.next_attempt_at is not None
+        delays.append(outbox_job.next_attempt_at - released_at)
+        await clear_next_attempt(session_factory, item_id=item_id)
+
+    assert delays[0] < delays[1] < delays[2]
+
+
+@pytest.mark.asyncio
+async def test_poison_job_is_dead_lettered_once_attempts_are_exhausted(
+    identity_database,
+) -> None:
+    _, session_factory = identity_database
+    dispatcher = RecordingDispatcher(RuntimeError("broker unavailable"))
+    publisher = make_publisher(session_factory, dispatcher, max_attempts=2)
+
+    async with session_factory() as session:
+        item_id = await add_ingestion_job(session)
+
+    first_report = await publisher.publish_pending(limit=10)
+    await clear_next_attempt(session_factory, item_id=item_id)
+    second_report = await publisher.publish_pending(limit=10)
+
+    assert first_report.dead_lettered == 0
+    assert second_report.dead_lettered == 1
+    assert second_report.unconfirmed_terminal_failures == 0
+
+    async with session_factory() as session:
+        outbox_job = await get_outbox_job(session, item_id=item_id)
+
+    assert outbox_job.failed_at is not None
+    assert outbox_job.failure_code == DISPATCH_ATTEMPTS_EXHAUSTED_FAILURE_CODE
+    assert outbox_job.last_error == "dispatch_failed:RuntimeError"
+    assert outbox_job.next_attempt_at is None
+    assert outbox_job.claimed_at is None
+    assert outbox_job.lease_expires_at is None
+
+
+@pytest.mark.asyncio
+async def test_dead_lettered_job_is_never_claimed_again(identity_database) -> None:
+    _, session_factory = identity_database
+    dispatcher = RecordingDispatcher(RuntimeError("broker unavailable"))
+    publisher = make_publisher(session_factory, dispatcher, max_attempts=1)
+
+    async with session_factory() as session:
+        await add_ingestion_job(session)
+
+    await publisher.publish_pending(limit=10)
+    report = await publisher.publish_pending(limit=10)
+
+    assert report.claimed == 0
+
+    async with session_factory() as session:
+        repository = OutboxRepository(session)
+        quarantined = await repository.find_dead_lettered(limit=10)
+        dead_lettered = await repository.count_dead_lettered()
+        pending = await repository.count_pending()
+
+    assert dead_lettered == 1
+    assert pending == 0
+    assert len(quarantined) == 1
+    assert quarantined[0].failure_code == DISPATCH_ATTEMPTS_EXHAUSTED_FAILURE_CODE
 
 
 @pytest.mark.asyncio

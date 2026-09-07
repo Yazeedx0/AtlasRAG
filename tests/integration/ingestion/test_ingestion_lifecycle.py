@@ -9,11 +9,14 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from atlasrag.contracts.types.ingestion import IngestionStatus
 from atlasrag.contracts.types.jobs import JobType
 from atlasrag.modules.ingestion.repositories import (
+    LEASE_EXPIRED,
     MAX_ATTEMPTS_EXCEEDED,
     IngestionRepository,
     make_ingestion_unit_of_work_factory,
 )
 from atlasrag.modules.ingestion.services.ingestion_lifecycle import (
+    ITEM_FINALIZED,
+    SUPERSEDED_BY_RETRY,
     IngestionLifecycleService,
 )
 from atlasrag.modules.knowledge.models import (
@@ -602,7 +605,7 @@ async def test_stranded_pending_item_is_never_produced_by_retry_loop(
             clock.advance(timedelta(seconds=1))
 
         clock.advance(timedelta(days=1))
-        await service.reap_expired_items()
+        await service.recover_expired_items(limit=10)
         item = await service.find_item(item_id=item_id)
 
     assert item is not None
@@ -629,19 +632,22 @@ async def test_expired_max_attempt_item_becomes_failed(identity_database) -> Non
         assert stuck.status is IngestionStatus.RUNNING
         assert stuck.attempt_count == MAX_ATTEMPTS
 
-        reaped = await service.reap_expired_items()
+        report = await service.recover_expired_items(limit=10)
         item = await service.find_item(item_id=item_id)
 
-    assert reaped == 1
+    assert report.scanned == 1
+    assert report.finalized == 1
+    assert report.requeued == 0
     assert item is not None
     assert item.status is IngestionStatus.FAILED
     assert item.error_code == MAX_ATTEMPTS_EXCEEDED
+    assert item.completed_at is not None
     assert item.claimed_at is None
     assert item.lease_expires_at is None
 
 
 @pytest.mark.asyncio
-async def test_reaper_leaves_items_with_attempts_remaining(identity_database) -> None:
+async def test_expired_item_with_attempts_remaining_is_requeued(identity_database) -> None:
     _, session_factory = identity_database
 
     async with session_factory() as session:
@@ -652,12 +658,134 @@ async def test_reaper_leaves_items_with_attempts_remaining(identity_database) ->
         await service.claim(item_id=item_id)
         clock.advance(LEASE_DURATION + timedelta(seconds=1))
 
-        reaped = await service.reap_expired_items()
+        report = await service.recover_expired_items(limit=10)
         item = await service.find_item(item_id=item_id)
 
-    assert reaped == 0
+    assert report.scanned == 1
+    assert report.requeued == 1
+    assert report.finalized == 0
+    assert report.skipped == 0
+    assert item is not None
+    assert item.status is IngestionStatus.PENDING
+    assert item.error_code == LEASE_EXPIRED
+    assert item.claimed_at is None
+    assert item.lease_expires_at is None
+    assert item.attempt_count == 1
+
+
+@pytest.mark.asyncio
+async def test_recovering_expired_item_redispatches_through_the_outbox(
+    identity_database,
+) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        await service.claim(item_id=item_id)
+        clock.advance(LEASE_DURATION + timedelta(seconds=1))
+        await service.recover_expired_items(limit=10)
+
+        jobs = (
+            await session.execute(
+                select(JobOutbox)
+                .where(JobOutbox.aggregate_id == item_id)
+                .order_by(JobOutbox.created_at)
+            )
+        ).scalars().all()
+
+    pending = [job for job in jobs if job.failed_at is None and job.published_at is None]
+    assert len(pending) == 1
+    assert pending[0].payload == {"ingestion_item_id": str(item_id)}
+    assert pending[0].job_type == JobType.PROCESS_INGESTION_ITEM.value
+
+    superseded = [job for job in jobs if job.failure_code == SUPERSEDED_BY_RETRY]
+    assert len(superseded) == 1
+
+
+@pytest.mark.asyncio
+async def test_recovery_finalization_discards_pending_outbox_jobs(
+    identity_database,
+) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        for _ in range(MAX_ATTEMPTS):
+            claim = await service.claim(item_id=item_id)
+            assert claim is not None
+            clock.advance(LEASE_DURATION + timedelta(seconds=1))
+
+        await service.recover_expired_items(limit=10)
+
+        jobs = (
+            await session.execute(
+                select(JobOutbox).where(JobOutbox.aggregate_id == item_id)
+            )
+        ).scalars().all()
+
+    assert jobs
+    assert all(job.failed_at is not None or job.published_at is not None for job in jobs)
+    assert any(job.failure_code == ITEM_FINALIZED for job in jobs)
+
+
+@pytest.mark.asyncio
+async def test_requeued_item_can_be_claimed_by_a_new_worker(identity_database) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+
+        first = await service.claim(item_id=item_id)
+        assert first is not None
+        clock.advance(LEASE_DURATION + timedelta(seconds=1))
+        await service.recover_expired_items(limit=10)
+
+        second = await service.claim(item_id=item_id)
+
+    assert second is not None
+    assert second.attempt_number == 2
+
+
+@pytest.mark.asyncio
+async def test_recovery_skips_an_item_reclaimed_by_another_worker(
+    identity_database,
+) -> None:
+    _, session_factory = identity_database
+
+    async with session_factory() as session:
+        clock = FakeClock(T0)
+        service = make_service(session, clock)
+        item_id = await setup_item(session, service)
+        repository = IngestionRepository(session, db_time=lambda: literal(clock()))
+
+        await service.claim(item_id=item_id)
+        clock.advance(LEASE_DURATION + timedelta(seconds=1))
+        expired = await repository.find_expired_items(limit=10)
+        assert len(expired) == 1
+
+        reclaimed = await service.claim(item_id=item_id)
+        assert reclaimed is not None
+
+        released = await repository.release_expired_item(
+            item_id=expired[0].id,
+            attempt_number=expired[0].attempt_count,
+            error_code=LEASE_EXPIRED,
+            error_message=None,
+        )
+        item = await service.find_item(item_id=item_id)
+
+    assert released == 0
     assert item is not None
     assert item.status is IngestionStatus.RUNNING
+    assert item.attempt_count == 2
 
 
 @pytest.mark.asyncio

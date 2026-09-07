@@ -89,11 +89,31 @@ class IngestionLifecycleRepository(Protocol):
     ) -> int:
         ...
 
-    async def fail_exhausted_expired_items(
+    async def find_expired_items(
         self,
         *,
+        limit: int,
+    ) -> tuple[IngestionItemState, ...]:
+        ...
+
+    async def release_expired_item(
+        self,
+        *,
+        item_id: UUID,
+        attempt_number: int,
+        error_code: str,
+        error_message: str | None,
+    ) -> int:
+        ...
+
+    async def fail_expired_item(
+        self,
+        *,
+        item_id: UUID,
+        attempt_number: int,
         now: datetime,
-        max_attempts: int,
+        error_code: str,
+        error_message: str | None,
     ) -> int:
         ...
 

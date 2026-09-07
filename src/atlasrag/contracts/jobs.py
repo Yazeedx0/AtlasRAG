@@ -3,7 +3,7 @@ from types import TracebackType
 from typing import Protocol
 from uuid import UUID
 
-from atlasrag.contracts.types.jobs import ClaimedOutboxJob, JobType
+from atlasrag.contracts.types.jobs import ClaimedOutboxJob, DeadLetteredJob, JobType
 
 
 class JobOutboxRepository(Protocol):
@@ -51,6 +51,7 @@ class JobOutboxRepository(Protocol):
         job_id: UUID,
         attempt_number: int,
         error_code: str,
+        next_attempt_at: datetime,
     ) -> bool:
         ...
 
@@ -61,7 +62,17 @@ class JobOutboxRepository(Protocol):
         attempt_number: int,
         failed_at: datetime,
         failure_code: str,
+        last_error: str | None = None,
     ) -> bool:
+        ...
+
+    async def count_pending(self) -> int:
+        ...
+
+    async def count_dead_lettered(self) -> int:
+        ...
+
+    async def find_dead_lettered(self, *, limit: int) -> tuple[DeadLetteredJob, ...]:
         ...
 
 

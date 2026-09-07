@@ -10,10 +10,12 @@ class ReadinessProbe(Protocol):
 @dataclass(frozen=True, slots=True)
 class ReadinessReport:
     database_ready: bool
+    broker_ready: bool
+    workers_ready: bool
 
     @property
     def ready(self) -> bool:
-        return self.database_ready
+        return self.database_ready and self.broker_ready and self.workers_ready
 
 
 __all__ = ["ReadinessProbe", "ReadinessReport"]

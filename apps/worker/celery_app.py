@@ -9,9 +9,18 @@ create_celery_app(
     database_echo=settings.DATABASE_ECHO,
     outbox_publish_batch_size=settings.OUTBOX_PUBLISH_BATCH_SIZE,
     outbox_publish_lease_seconds=settings.OUTBOX_PUBLISH_LEASE_SECONDS,
+    outbox_publish_max_attempts=settings.OUTBOX_PUBLISH_MAX_ATTEMPTS,
+    outbox_publish_backoff_seconds=settings.OUTBOX_PUBLISH_BACKOFF_SECONDS,
+    outbox_publish_backoff_max_seconds=settings.OUTBOX_PUBLISH_BACKOFF_MAX_SECONDS,
+    outbox_publish_interval_seconds=settings.OUTBOX_PUBLISH_INTERVAL_SECONDS,
     ingestion_lease_seconds=settings.INGESTION_LEASE_SECONDS,
     ingestion_heartbeat_seconds=settings.INGESTION_HEARTBEAT_SECONDS,
     ingestion_max_attempts=settings.INGESTION_MAX_ATTEMPTS,
+    ingestion_lease_recovery_batch_size=settings.INGESTION_LEASE_RECOVERY_BATCH_SIZE,
+    ingestion_lease_recovery_interval_seconds=(
+        settings.INGESTION_LEASE_RECOVERY_INTERVAL_SECONDS
+    ),
+    worker_shutdown_grace_seconds=settings.WORKER_SHUTDOWN_GRACE_SECONDS,
 )
 
 __all__ = ["celery_app"]

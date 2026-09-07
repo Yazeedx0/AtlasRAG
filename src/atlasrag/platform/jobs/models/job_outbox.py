@@ -45,6 +45,10 @@ class JobOutbox(Base):
             "AND length(btrim(failure_code)) > 0)",
             name="terminal_failure_complete",
         ),
+        CheckConstraint(
+            "next_attempt_at IS NULL OR (published_at IS NULL AND failed_at IS NULL)",
+            name="terminal_job_has_no_next_attempt",
+        ),
         Index(
             "ix_job_outbox_unpublished_created_at",
             "created_at",
@@ -54,6 +58,16 @@ class JobOutbox(Base):
             "ix_job_outbox_unpublished_lease_expires_at",
             "lease_expires_at",
             postgresql_where=text("published_at IS NULL AND failed_at IS NULL"),
+        ),
+        Index(
+            "ix_job_outbox_unpublished_next_attempt_at",
+            "next_attempt_at",
+            postgresql_where=text("published_at IS NULL AND failed_at IS NULL"),
+        ),
+        Index(
+            "ix_job_outbox_dead_lettered_failed_at",
+            "failed_at",
+            postgresql_where=text("failed_at IS NOT NULL"),
         ),
         {"schema": "platform"},
     )
@@ -90,6 +104,10 @@ class JobOutbox(Base):
     last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
     claimed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     lease_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    next_attempt_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )

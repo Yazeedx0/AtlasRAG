@@ -19,4 +19,15 @@ class ClaimedOutboxJob:
     lease_expires_at: datetime
 
 
-__all__ = ["ClaimedOutboxJob", "JobType"]
+@dataclass(frozen=True, slots=True)
+class DeadLetteredJob:
+    id: uuid.UUID
+    job_type: str
+    aggregate_id: uuid.UUID
+    attempt_count: int
+    failed_at: datetime
+    failure_code: str
+    last_error: str | None
+
+
+__all__ = ["ClaimedOutboxJob", "DeadLetteredJob", "JobType"]

@@ -16,6 +16,7 @@ from atlasrag.contracts.types.ingestion import (
 from atlasrag.modules.ingestion.models import IngestionItem, IngestionRun
 
 MAX_ATTEMPTS_EXCEEDED = "max_attempts_exceeded"
+LEASE_EXPIRED = "lease_expired"
 
 
 def _run_columns() -> tuple[object, ...]:
@@ -316,25 +317,59 @@ class IngestionRepository:
         rows = (await self._session.execute(statement)).all()
         return tuple(_to_item_state(row) for row in rows)
 
-    async def fail_exhausted_expired_items(
+    async def release_expired_item(
         self,
         *,
-        now: datetime,
-        max_attempts: int,
+        item_id: uuid.UUID,
+        attempt_number: int,
+        error_code: str,
+        error_message: str | None,
     ) -> int:
         statement = (
             update(IngestionItem)
             .where(
-                IngestionItem.status == IngestionStatus.RUNNING,
-                IngestionItem.lease_expires_at <= self._db_time_source(),
-                IngestionItem.attempt_count >= max_attempts,
+                *_expired_lease(
+                    item_id=item_id,
+                    attempt_number=attempt_number,
+                    db_time=self._db_time_source(),
+                )
+            )
+            .values(
+                status=IngestionStatus.PENDING,
+                claimed_at=None,
+                lease_expires_at=None,
+                error_code=error_code,
+                error_message=error_message,
+            )
+        )
+        result = await self._session.execute(statement)
+        return result.rowcount
+
+    async def fail_expired_item(
+        self,
+        *,
+        item_id: uuid.UUID,
+        attempt_number: int,
+        now: datetime,
+        error_code: str,
+        error_message: str | None,
+    ) -> int:
+        statement = (
+            update(IngestionItem)
+            .where(
+                *_expired_lease(
+                    item_id=item_id,
+                    attempt_number=attempt_number,
+                    db_time=self._db_time_source(),
+                )
             )
             .values(
                 status=IngestionStatus.FAILED,
                 completed_at=now,
                 claimed_at=None,
                 lease_expires_at=None,
-                error_code=MAX_ATTEMPTS_EXCEEDED,
+                error_code=error_code,
+                error_message=error_message,
             )
         )
         result = await self._session.execute(statement)
@@ -352,4 +387,18 @@ def _owned_by(
         IngestionItem.status == IngestionStatus.RUNNING,
         IngestionItem.attempt_count == attempt_number,
         IngestionItem.lease_expires_at > db_time,
+    )
+
+
+def _expired_lease(
+    *,
+    item_id: uuid.UUID,
+    attempt_number: int,
+    db_time: ColumnElement[datetime],
+) -> tuple[object, ...]:
+    return (
+        IngestionItem.id == item_id,
+        IngestionItem.status == IngestionStatus.RUNNING,
+        IngestionItem.attempt_count == attempt_number,
+        IngestionItem.lease_expires_at <= db_time,
     )

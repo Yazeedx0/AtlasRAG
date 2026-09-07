@@ -5,7 +5,7 @@ from .artifact_loader import (
     ArtifactLoadError,
     ArtifactUnavailableForIngestion,
 )
-from .ingestion_lifecycle import IngestionLifecycleService
+from .ingestion_lifecycle import IngestionLifecycleService, LeaseRecoveryReport
 from .ingestion_pipeline import (
     IngestDocument,
     IngestionPipelineService,
@@ -22,5 +22,6 @@ __all__ = [
     "IngestDocument",
     "IngestionLifecycleService",
     "IngestionPipelineService",
+    "LeaseRecoveryReport",
     "QueuedIngestion",
 ]

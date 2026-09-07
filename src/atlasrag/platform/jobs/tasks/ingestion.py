@@ -6,7 +6,9 @@ from celery import Task
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from atlasrag.bootstrap.core.config import get_settings
+from atlasrag.contracts.chunking import Chunker
 from atlasrag.contracts.object_storage import ObjectStorage
+from atlasrag.modules.ingestion.chunking import create_chunker
 from atlasrag.modules.ingestion.extraction import create_extraction_pipeline
 from atlasrag.modules.ingestion.extraction.pipeline import ExtractionPipeline
 from atlasrag.modules.ingestion.repositories.unit_of_work import (
@@ -69,6 +71,7 @@ def process_ingestion_item(self: Task, ingestion_item_id: str) -> None:
             session_factory=session_factory,
             object_storage=object_storage,
             extraction_pipeline=create_extraction_pipeline(settings),
+            chunker=create_chunker(),
             heartbeat_seconds=configuration.atlas_ingestion_heartbeat_seconds,
         )
     )
@@ -82,6 +85,7 @@ async def _handle_item(
     session_factory: async_sessionmaker[AsyncSession],
     object_storage: ObjectStorage,
     extraction_pipeline: ExtractionPipeline,
+    chunker: Chunker,
     heartbeat_seconds: int,
 ) -> None:
     session = session_factory()
@@ -94,6 +98,7 @@ async def _handle_item(
                     object_storage=object_storage,
                 ),
                 extraction_pipeline=extraction_pipeline,
+                chunker=chunker,
                 lifecycle=lifecycle,
             ),
             heartbeat=LeaseHeartbeat(

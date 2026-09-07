@@ -5,11 +5,13 @@ from uuid import UUID, uuid4
 
 import pytest
 
+from atlasrag.contracts.chunking import Chunker
 from atlasrag.contracts.error.extraction_errors import ExtractionFailed
 from atlasrag.contracts.error.object_storage_errors import (
     ObjectNotFound,
     ObjectStorageUnavailable,
 )
+from atlasrag.contracts.types.chunking import ChunkDraft
 from atlasrag.contracts.types.extraction import (
     ExtractedBlock,
     ExtractedBlockType,
@@ -18,6 +20,7 @@ from atlasrag.contracts.types.extraction import (
     ExtractionResult,
 )
 from atlasrag.contracts.types.ingestion import ClaimedIngestionItem, LoadedArtifact
+from atlasrag.modules.ingestion.chunking import create_chunker
 from atlasrag.modules.ingestion.extraction.pipeline import ExtractionPipeline
 from atlasrag.modules.ingestion.services.artifact_loader import (
     ArtifactIntegrityMismatch,
@@ -28,6 +31,7 @@ from atlasrag.modules.ingestion.services.ingestion_lifecycle import (
     IngestionLifecycleService,
 )
 from atlasrag.modules.ingestion.workers.default_processor import (
+    EMPTY_CHUNK_SET,
     EXTRACTION_FAILED,
     DefaultIngestionProcessor,
 )
@@ -102,13 +106,14 @@ class FakeLifecycle:
         self._completed = completed
         self.completions: list[dict[str, object]] = []
 
-    async def mark_completed(
+    async def complete_with_chunks(
         self,
         *,
         item_id: UUID,
         attempt_number: int,
         observed_file_hash: str,
         execution_metadata: dict[str, object],
+        chunks: tuple[ChunkDraft, ...],
     ) -> bool:
         self.completions.append(
             {
@@ -116,21 +121,34 @@ class FakeLifecycle:
                 "attempt_number": attempt_number,
                 "observed_file_hash": observed_file_hash,
                 "execution_metadata": execution_metadata,
+                "chunks": chunks,
             }
         )
         return self._completed
+
+
+class EmptyChunker:
+    def chunk(
+        self,
+        *,
+        document: ExtractedDocument,
+        language_code: str | None = None,
+    ) -> tuple[ChunkDraft, ...]:
+        return ()
 
 
 def make_processor(
     loader: FakeArtifactLoader,
     pipeline: FakeExtractionPipeline | None = None,
     lifecycle: FakeLifecycle | None = None,
+    chunker: Chunker | None = None,
 ) -> DefaultIngestionProcessor:
     return DefaultIngestionProcessor(
         artifact_loader=cast(ArtifactLoader, loader),
         extraction_pipeline=cast(
             ExtractionPipeline, pipeline if pipeline is not None else FakeExtractionPipeline()
         ),
+        chunker=chunker if chunker is not None else create_chunker(),
         lifecycle=cast(
             IngestionLifecycleService, lifecycle if lifecycle is not None else FakeLifecycle()
         ),
@@ -262,6 +280,27 @@ async def test_successful_processing_persists_the_extraction_outcome() -> None:
     assert extraction["method"] == "openai_ocr"
     assert extraction["fallback_used"] is False
     assert extraction["block_count"] == 1
+    chunks = cast(tuple[ChunkDraft, ...], completion["chunks"])
+    assert len(chunks) == 1
+    assert chunks[0].content == "body"
+    chunking = cast(dict, completion["execution_metadata"])["chunking"]
+    assert chunking["chunk_count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_a_document_that_yields_no_chunks_fails_permanently() -> None:
+    lifecycle = FakeLifecycle()
+
+    with pytest.raises(PermanentIngestionError) as error:
+        await make_processor(
+            FakeArtifactLoader(),
+            None,
+            lifecycle,
+            chunker=EmptyChunker(),
+        ).process(claim=make_claim())
+
+    assert error.value.error_code == EMPTY_CHUNK_SET
+    assert lifecycle.completions == []
 
 
 @pytest.mark.asyncio

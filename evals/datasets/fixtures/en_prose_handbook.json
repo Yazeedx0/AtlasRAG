@@ -1,0 +1,77 @@
+{
+  "schema_version": "1",
+  "fixture_id": "en_prose_handbook",
+  "title": "Employee Handbook — Remote Work",
+  "language": "en",
+  "source_type": "prose",
+  "document_metadata": {
+    "source_file": "employee_handbook_2026.pdf",
+    "language_code": "en"
+  },
+  "expected_structure": {
+    "heading_count": 3,
+    "table_count": 0,
+    "requires_splitting": false,
+    "pages_covered": [4, 5]
+  },
+  "annotated_boundaries": [
+    {
+      "after_block_index": 2,
+      "rationale": "Eligibility ends before the equipment section begins; a chunk that spans both mixes two answerable topics."
+    },
+    {
+      "after_block_index": 5,
+      "rationale": "Equipment reimbursement ends before the approval workflow, which is a separate question in the golden set."
+    }
+  ],
+  "blocks": [
+    {
+      "text": "Remote Work Eligibility",
+      "block_type": "heading",
+      "page_number": 4,
+      "metadata": { "level": 1 }
+    },
+    {
+      "text": "Employees who have completed the ninety day probation period may request a remote work arrangement. Requests are evaluated against the responsibilities of the role rather than the seniority of the employee, and a role is considered remote eligible when no more than two of its recurring duties require physical presence at a company site.",
+      "block_type": "paragraph",
+      "page_number": 4,
+      "metadata": {}
+    },
+    {
+      "text": "Managers must record the outcome of every eligibility review in the human resources system within five business days. A denied request must state which recurring duty requires physical presence, and the employee may request a second review after ninety days.",
+      "block_type": "paragraph",
+      "page_number": 4,
+      "metadata": {}
+    },
+    {
+      "text": "Home Office Equipment",
+      "block_type": "heading",
+      "page_number": 5,
+      "metadata": { "level": 1 }
+    },
+    {
+      "text": "The company reimburses up to one thousand two hundred United States dollars of home office equipment over a rolling twenty four month period. Reimbursable items include a desk, an ergonomic chair, an external monitor, and a headset. Internet service, furniture that is not used primarily for work, and consumable supplies are not reimbursable.",
+      "block_type": "paragraph",
+      "page_number": 5,
+      "metadata": {}
+    },
+    {
+      "text": "Equipment purchased under this policy remains the property of the company while the employee is employed. On separation the employee may either return the equipment or purchase it at its depreciated book value.",
+      "block_type": "paragraph",
+      "page_number": 5,
+      "metadata": {}
+    },
+    {
+      "text": "Approval Workflow",
+      "block_type": "heading",
+      "page_number": 5,
+      "metadata": { "level": 1 }
+    },
+    {
+      "text": "A remote work request moves through three approvals: the direct manager confirms the eligibility review, the department head confirms coverage of on site duties, and human resources records the arrangement. An arrangement takes effect on the first day of the month following the third approval.",
+      "block_type": "paragraph",
+      "page_number": 5,
+      "metadata": {}
+    }
+  ]
+}

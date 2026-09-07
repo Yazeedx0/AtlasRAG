@@ -7,6 +7,11 @@ from atlasrag.contracts.error.object_storage_errors import (
 )
 from atlasrag.contracts.types.extraction import ExtractionResult
 from atlasrag.contracts.types.ingestion import ClaimedIngestionItem, LoadedArtifact
+from atlasrag.contracts.types.observability import (
+    JobStage,
+    MetricName,
+    SpanName,
+)
 from atlasrag.modules.ingestion.extraction.pipeline import ExtractionPipeline
 from atlasrag.modules.ingestion.services.artifact_loader import (
     ArtifactIntegrityMismatch,
@@ -20,6 +25,12 @@ from atlasrag.modules.ingestion.workers.errors import (
     IngestionLeaseLost,
     PermanentIngestionError,
     TransientIngestionError,
+)
+from atlasrag.platform.observability import (
+    annotate_span,
+    job_type_label,
+    record_job_completed,
+    traced_stage,
 )
 
 EXTRACTION_FAILED = "extraction_failed"
@@ -53,14 +64,21 @@ class DefaultIngestionProcessor:
     async def process(self, *, claim: ClaimedIngestionItem) -> None:
         artifact = await self._load(artifact_id=claim.document_artifact_id)
         result = await self._extract(artifact=artifact)
-        completed = await self._lifecycle.mark_completed(
-            item_id=claim.ingestion_item_id,
-            attempt_number=claim.attempt_number,
-            observed_file_hash=artifact.observed_file_hash,
-            execution_metadata=build_execution_metadata(result),
-        )
-        if not completed:
-            raise IngestionLeaseLost("Ingestion lease was lost before completion.")
+        async with traced_stage(
+            SpanName.PERSISTENCE,
+            stage=JobStage.PERSISTENCE,
+            duration_metric=MetricName.PERSISTENCE_DURATION_SECONDS,
+        ) as observation:
+            completed = await self._lifecycle.mark_completed(
+                item_id=claim.ingestion_item_id,
+                attempt_number=claim.attempt_number,
+                observed_file_hash=artifact.observed_file_hash,
+                execution_metadata=build_execution_metadata(result),
+            )
+            annotate_span(observation.span, lease_retained=completed)
+            if not completed:
+                raise IngestionLeaseLost("Ingestion lease was lost before completion.")
+        record_job_completed(job_type=job_type_label(), extractor_method=result.method.value)
 
     async def _load(self, *, artifact_id: UUID) -> LoadedArtifact:
         try:

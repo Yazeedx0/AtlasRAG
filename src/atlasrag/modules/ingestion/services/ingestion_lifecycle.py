@@ -9,7 +9,16 @@ from atlasrag.contracts.types.ingestion import (
     IngestionRunState,
 )
 from atlasrag.contracts.types.jobs import JobType
+from atlasrag.contracts.types.observability import JobStage, SpanName
 from atlasrag.modules.ingestion.repositories import MAX_ATTEMPTS_EXCEEDED
+from atlasrag.platform.observability import (
+    StageObservation,
+    annotate_span,
+    job_type_label,
+    record_job_failed,
+    record_recovered,
+    traced_stage,
+)
 
 SUPERSEDED_BY_RETRY = "superseded_by_retry"
 
@@ -114,8 +123,31 @@ class IngestionLifecycleService:
         error_code: str,
         error_message: str | None = None,
     ) -> bool:
+        async with traced_stage(
+            SpanName.INGESTION_RETRY,
+            stage=JobStage.RETRY,
+        ) as observation:
+            return await self._schedule_retry(
+                item_id=item_id,
+                attempt_number=attempt_number,
+                error_code=error_code,
+                error_message=error_message,
+                observation=observation,
+            )
+
+    async def _schedule_retry(
+        self,
+        *,
+        item_id: uuid.UUID,
+        attempt_number: int,
+        error_code: str,
+        error_message: str | None,
+        observation: StageObservation,
+    ) -> bool:
         async with self._uow_factory() as uow:
-            if attempt_number >= self._max_attempts:
+            attempts_exhausted = attempt_number >= self._max_attempts
+            annotate_span(observation.span, attempts_exhausted=attempts_exhausted)
+            if attempts_exhausted:
                 rowcount = await uow.ingestion.mark_failed(
                     item_id=item_id,
                     attempt_number=attempt_number,
@@ -146,6 +178,12 @@ class IngestionLifecycleService:
                     )
             if rowcount == 1:
                 await uow.commit()
+                if attempts_exhausted:
+                    record_job_failed(
+                        job_type=job_type_label(),
+                        stage=JobStage.RETRY,
+                        error_code=MAX_ATTEMPTS_EXCEEDED,
+                    )
             return rowcount == 1
 
     async def mark_failed(
@@ -191,11 +229,21 @@ class IngestionLifecycleService:
             return rowcount == 1
 
     async def reap_expired_items(self) -> int:
-        async with self._uow_factory() as uow:
-            count = await uow.ingestion.fail_exhausted_expired_items(
-                now=self._clock(),
-                max_attempts=self._max_attempts,
+        async with traced_stage(
+            SpanName.INGESTION_RECOVERY,
+            stage=JobStage.RECOVERY,
+        ) as observation:
+            async with self._uow_factory() as uow:
+                count = await uow.ingestion.fail_exhausted_expired_items(
+                    now=self._clock(),
+                    max_attempts=self._max_attempts,
+                )
+                if count > 0:
+                    await uow.commit()
+            annotate_span(observation.span, reaped_items=count)
+            record_recovered(
+                job_type=JobType.PROCESS_INGESTION_ITEM.value,
+                status=MAX_ATTEMPTS_EXCEEDED,
+                count=count,
             )
-            if count > 0:
-                await uow.commit()
             return count

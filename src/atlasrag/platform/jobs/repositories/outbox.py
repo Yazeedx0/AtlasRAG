@@ -37,6 +37,18 @@ class OutboxRepository:
             )
         )
 
+    async def count_pending_by_job_type(self) -> dict[str, int]:
+        statement = (
+            select(JobOutbox.job_type, func.count(JobOutbox.id))
+            .where(
+                JobOutbox.published_at.is_(None),
+                JobOutbox.failed_at.is_(None),
+            )
+            .group_by(JobOutbox.job_type)
+        )
+        rows = (await self._session.execute(statement)).all()
+        return {row[0]: row[1] for row in rows}
+
     async def discard_pending_for_aggregate(
         self,
         *,

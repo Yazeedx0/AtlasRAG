@@ -17,6 +17,9 @@ class JobOutboxRepository(Protocol):
     ) -> None:
         ...
 
+    async def count_pending_by_job_type(self) -> dict[str, int]:
+        ...
+
     async def discard_pending_for_aggregate(
         self,
         *,

@@ -51,4 +51,6 @@ def publish_outbox(self: Task) -> None:
 
 
 async def _publish_pending(*, publisher: OutboxPublisher, limit: int) -> OutboxPublishReport:
-    return await publisher.publish_pending(limit=limit)
+    report = await publisher.publish_pending(limit=limit)
+    await publisher.record_backlog()
+    return report

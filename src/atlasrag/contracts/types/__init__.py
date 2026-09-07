@@ -5,6 +5,12 @@ from .ingestion import (
     IngestionStatus,
     LoadedArtifact,
 )
+from .chunking import (
+    ChunkContentType,
+    ChunkDraft,
+    ChunkingStrategy,
+    ChunkState,
+)
 from .ai_types import (
     AiProvider,
     AiCapability,
@@ -72,6 +78,10 @@ __all__ = [
     "ExtractionMethod",
     "ExtractionQualityAssessment",
     "ExtractionResult",
+    "ChunkContentType",
+    "ChunkDraft",
+    "ChunkState",
+    "ChunkingStrategy",
     "ClaimedIngestionItem",
     "IngestionItemState",
     "IngestionRunState",

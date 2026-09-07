@@ -41,6 +41,20 @@ from .document import (
     UploadedDocumentArtifact,
 
 )
+from .observability import (
+    ErrorCategory,
+    JobStage,
+    LabelKey,
+    LanguageLabel,
+    MetricDefinition,
+    MetricKind,
+    MetricName,
+    MetricSample,
+    OutcomeLabel,
+    RecordedSpan,
+    SpanName,
+    SpanStatus,
+)
 
 
 __all__ = [
@@ -77,5 +91,17 @@ __all__ = [
     "IngestionRunState",
     "IngestionStatus",
     "LoadedArtifact",
+    "ErrorCategory",
+    "JobStage",
+    "LabelKey",
+    "LanguageLabel",
+    "MetricDefinition",
+    "MetricKind",
+    "MetricName",
+    "MetricSample",
+    "OutcomeLabel",
+    "RecordedSpan",
+    "SpanName",
+    "SpanStatus",
 
 ]

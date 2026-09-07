@@ -13,6 +13,14 @@ class Environment(Enum):
     PRODUCTION = "production"
 
 
+class LogLevel(Enum):
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
+
+
 class Settings(BaseSettings):
     APP_NAME: str = "AtlasRAG"
     APP_VERSION: str = "1.0.0"
@@ -91,6 +99,11 @@ class Settings(BaseSettings):
     LANGUAGE_CODE_MAX_LENGTH: int = Field(default=20, gt=0)
     MAX_FILE_SIZE_BYTES: int = Field(default=50 * 1024 * 1024, gt=0)
     STORAGE_PROVIDER: str = Field(default="s3", min_length=1)
+
+    LOG_LEVEL: LogLevel = LogLevel.INFO
+    LOG_JSON: bool = True
+    TRACING_ENABLED: bool = True
+    METRICS_ENABLED: bool = True
 
     CELERY_BROKER_URL: str = Field(default="redis://localhost:6379/0", min_length=1)
     OUTBOX_PUBLISH_BATCH_SIZE: int = Field(default=100, ge=1, le=1000)

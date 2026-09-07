@@ -1,10 +1,30 @@
-from .ingestion import IngestionStatus
+from .ingestion import (
+    ClaimedIngestionItem,
+    IngestionItemState,
+    IngestionRunState,
+    IngestionStatus,
+    LoadedArtifact,
+)
+from .chunking import (
+    ChunkContentType,
+    ChunkDraft,
+    ChunkingStrategy,
+    ChunkState,
+)
 from .ai_types import (
     AiProvider,
     AiCapability,
     EmbeddingInputType,
     RankedDocument, 
     GeneratedText
+)
+from .extraction import (
+    ExtractedBlock,
+    ExtractedBlockType,
+    ExtractedDocument,
+    ExtractionMethod,
+    ExtractionQualityAssessment,
+    ExtractionResult,
 )
 from .authentication import AuthenticatedIdentity
 from .authorization import (
@@ -52,6 +72,20 @@ __all__ = [
     "EmbeddingInputType",
     "GeneratedText",
     "RankedDocument",
-    "IngestionStatus"
+    "ExtractedBlock",
+    "ExtractedBlockType",
+    "ExtractedDocument",
+    "ExtractionMethod",
+    "ExtractionQualityAssessment",
+    "ExtractionResult",
+    "ChunkContentType",
+    "ChunkDraft",
+    "ChunkState",
+    "ChunkingStrategy",
+    "ClaimedIngestionItem",
+    "IngestionItemState",
+    "IngestionRunState",
+    "IngestionStatus",
+    "LoadedArtifact",
 
 ]

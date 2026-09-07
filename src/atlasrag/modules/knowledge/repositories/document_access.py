@@ -23,8 +23,8 @@ class DocumentAccessRepository:
         if not principal_ids:
             return False
 
-        statement = select(
-            exists()
+        active_grant = (
+            select(DocumentACL.id)
             .select_from(DocumentACL)
             .join(Document, Document.id == DocumentACL.document_id)
             .where(
@@ -42,5 +42,6 @@ class DocumentAccessRepository:
                 ),
             )
         )
+        statement = select(exists(active_grant))
 
         return bool(await self._session.scalar(statement))

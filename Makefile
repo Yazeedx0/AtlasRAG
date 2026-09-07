@@ -72,6 +72,10 @@ clean-seed: ## Remove the development company seed from the database and Keycloa
 eval: ## Run the golden set and write a report to evals/reports/
 	uv run python scripts/run_eval.py
 
+.PHONY: eval-chunking
+eval-chunking: ## Compare chunking strategies and write a report to evals/reports/
+	uv run python -m evals --stamp-run
+
 .PHONY: lint
 lint: ## ruff check + format check
 	uv run ruff check .

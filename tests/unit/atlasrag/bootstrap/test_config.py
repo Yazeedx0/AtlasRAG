@@ -3,7 +3,8 @@ results don't depend on what a given developer's machine has set.
 """
 
 import pytest
-from apps.core.config import Environment, Settings, get_settings
+
+from atlasrag.bootstrap.core.config import Environment, Settings, get_settings
 
 pytestmark = pytest.mark.unit
 
@@ -11,7 +12,11 @@ pytestmark = pytest.mark.unit
 @pytest.fixture
 def make_settings(monkeypatch):
     def _make(**env_vars: str) -> Settings:
-        for key, value in env_vars.items():
+        required_env_vars = {
+            "ATLAS_DATABASE_URL": "postgresql+asyncpg://atlas:atlas@localhost:5432/atlasrag",
+        }
+        required_env_vars.update(env_vars)
+        for key, value in required_env_vars.items():
             monkeypatch.setenv(key, value)
         return Settings(_env_file=None)
 
@@ -28,9 +33,9 @@ def test_defaults_with_no_env(make_settings):
 
 
 def test_environment_enum_values():
-    assert Environment.DEVELOPMENT == "development"
-    assert Environment.TEST == "test"
-    assert Environment.PRODUCTION == "production"
+    assert Environment.DEVELOPMENT.value == "development"
+    assert Environment.TEST.value == "test"
+    assert Environment.PRODUCTION.value == "production"
 
 
 def test_reads_prefixed_env_vars(make_settings):

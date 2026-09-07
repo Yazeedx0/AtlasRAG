@@ -1,0 +1,77 @@
+{
+  "schema_version": "1",
+  "fixture_id": "ar_prose_leave_policy",
+  "title": "سياسة الإجازات",
+  "language": "ar",
+  "source_type": "prose",
+  "document_metadata": {
+    "source_file": "leave_policy_ar_2026.pdf",
+    "language_code": "ar"
+  },
+  "expected_structure": {
+    "heading_count": 3,
+    "table_count": 0,
+    "requires_splitting": false,
+    "pages_covered": [1, 2]
+  },
+  "annotated_boundaries": [
+    {
+      "after_block_index": 2,
+      "rationale": "تنتهي الإجازة السنوية قبل بداية الإجازة المرضية، وهما سؤالان منفصلان في مجموعة التقييم."
+    },
+    {
+      "after_block_index": 5,
+      "rationale": "ينتهي قسم الإجازة المرضية قبل قسم إجازة الأمومة."
+    }
+  ],
+  "blocks": [
+    {
+      "text": "الإجازة السنوية",
+      "block_type": "heading",
+      "page_number": 1,
+      "metadata": { "level": 1 }
+    },
+    {
+      "text": "يستحق الموظف إجازة سنوية مدفوعة الأجر مقدارها واحد وعشرون يوم عمل في السنة الأولى من الخدمة، وترتفع إلى ثلاثين يوم عمل بعد إتمام خمس سنوات متصلة في الشركة. تحتسب الإجازة على أساس أيام العمل ولا تدخل العطل الرسمية ضمن رصيد الإجازة.",
+      "block_type": "paragraph",
+      "page_number": 1,
+      "metadata": {}
+    },
+    {
+      "text": "يجوز ترحيل خمسة أيام كحد أقصى من رصيد الإجازة السنوية إلى السنة التالية، ويسقط ما زاد على ذلك في نهاية شهر آذار من السنة التالية ما لم يصدر استثناء كتابي من إدارة الموارد البشرية.",
+      "block_type": "paragraph",
+      "page_number": 1,
+      "metadata": {}
+    },
+    {
+      "text": "الإجازة المرضية",
+      "block_type": "heading",
+      "page_number": 2,
+      "metadata": { "level": 1 }
+    },
+    {
+      "text": "يستحق الموظف إجازة مرضية مدفوعة الأجر بالكامل مدتها أربعة عشر يوماً في السنة، تليها أربعة عشر يوماً بنصف الأجر. يشترط تقديم تقرير طبي معتمد لكل إجازة مرضية تتجاوز يومين متصلين.",
+      "block_type": "paragraph",
+      "page_number": 2,
+      "metadata": {}
+    },
+    {
+      "text": "لا يجوز تحويل رصيد الإجازة المرضية غير المستخدم إلى إجازة سنوية أو إلى بدل نقدي عند انتهاء الخدمة.",
+      "block_type": "paragraph",
+      "page_number": 2,
+      "metadata": {}
+    },
+    {
+      "text": "إجازة الأمومة",
+      "block_type": "heading",
+      "page_number": 2,
+      "metadata": { "level": 1 }
+    },
+    {
+      "text": "تستحق الموظفة إجازة أمومة مدفوعة الأجر مدتها سبعون يوماً تبدأ قبل التاريخ المتوقع للولادة بأسبوعين على الأكثر. وللموظفة الحق في ساعة رضاعة يومية لمدة سنة من تاريخ الولادة دون أن يخصم ذلك من أجرها.",
+      "block_type": "paragraph",
+      "page_number": 2,
+      "metadata": {}
+    }
+  ]
+}

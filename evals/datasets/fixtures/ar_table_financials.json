@@ -1,0 +1,71 @@
+{
+  "schema_version": "1",
+  "fixture_id": "ar_table_financials",
+  "title": "التقرير المالي السنوي — ملخص الإيرادات",
+  "language": "ar",
+  "source_type": "table_report",
+  "document_metadata": {
+    "source_file": "annual_report_ar_2025.pdf",
+    "language_code": "ar"
+  },
+  "expected_structure": {
+    "heading_count": 2,
+    "table_count": 2,
+    "requires_splitting": false,
+    "pages_covered": [12, 13]
+  },
+  "annotated_boundaries": [
+    {
+      "after_block_index": 3,
+      "rationale": "يجب أن يبقى الجدول الأول وحدة واحدة مع العنوان الذي يسبقه، ولا يجوز فصل صفوفه عبر أكثر من مقطع."
+    },
+    {
+      "after_block_index": 6,
+      "rationale": "يبدأ جدول المصروفات قسماً جديداً وله عنوان مستقل."
+    }
+  ],
+  "blocks": [
+    {
+      "text": "ملخص الإيرادات حسب القطاع",
+      "block_type": "heading",
+      "page_number": 12,
+      "metadata": { "level": 1 }
+    },
+    {
+      "text": "يعرض الجدول التالي الإيرادات المحققة لكل قطاع خلال السنة المالية المنتهية في الحادي والثلاثين من كانون الأول، مقارنة بالسنة السابقة، وجميع المبالغ بآلاف الدنانير.",
+      "block_type": "paragraph",
+      "page_number": 12,
+      "metadata": {}
+    },
+    {
+      "text": "| القطاع | إيرادات 2025 | إيرادات 2024 | نسبة التغير |\n| --- | --- | --- | --- |\n| الخدمات المصرفية للأفراد | 48,200 | 41,750 | 15.5% |\n| الخدمات المصرفية للشركات | 63,900 | 60,100 | 6.3% |\n| إدارة الأصول | 12,400 | 13,800 | -10.1% |\n| الخزينة والاستثمار | 9,750 | 7,300 | 33.6% |\n| الإجمالي | 134,250 | 122,950 | 9.2% |",
+      "block_type": "table",
+      "page_number": 12,
+      "metadata": { "table_id": "revenue_by_segment", "row_count": 5, "column_count": 4 }
+    },
+    {
+      "text": "يعود النمو في قطاع الخزينة والاستثمار بشكل رئيسي إلى إعادة تسعير المحفظة، بينما يعكس التراجع في إدارة الأصول خروج محفظتين مؤسسيتين في الربع الثالث.",
+      "block_type": "paragraph",
+      "page_number": 12,
+      "metadata": {}
+    },
+    {
+      "text": "المصروفات التشغيلية",
+      "block_type": "heading",
+      "page_number": 13,
+      "metadata": { "level": 1 }
+    },
+    {
+      "text": "| البند | 2025 | 2024 |\n| --- | --- | --- |\n| رواتب ومنافع | 51,300 | 47,900 |\n| إيجارات ومرافق | 8,150 | 8,050 |\n| تقنية المعلومات | 14,600 | 11,200 |\n| الإجمالي | 74,050 | 67,150 |",
+      "block_type": "table",
+      "page_number": 13,
+      "metadata": { "table_id": "operating_expenses", "row_count": 4, "column_count": 3 }
+    },
+    {
+      "text": "ارتفعت مصروفات تقنية المعلومات نتيجة ترحيل النظام الأساسي إلى بنية سحابية، ومن المتوقع أن تستقر عند مستوى أقل اعتباراً من الربع الثاني من السنة القادمة.",
+      "block_type": "paragraph",
+      "page_number": 13,
+      "metadata": {}
+    }
+  ]
+}

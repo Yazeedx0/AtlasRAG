@@ -232,7 +232,8 @@ async def test_upload_artifact_endpoint_rejects_missing_filename() -> None:
         )
 
     assert response.status_code == 422
-    assert response.json() == {"detail": "uploaded file must have a filename"}
+    detail = response.json()["detail"]
+    assert detail[0]["loc"] == ["body", "file"]
     assert service.calls == []
 
 

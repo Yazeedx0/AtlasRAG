@@ -1,8 +1,8 @@
 from typing import Annotated
 
-from fastapi import Header, HTTPException, Request, status
+from fastapi import Depends, Header, HTTPException, Request, status
 
-from atlasrag.bootstrap.core.config import get_settings
+from atlasrag.bootstrap.core.config import Settings, get_settings
 from atlasrag.contracts.authentication import (
     AuthenticatedIdentity,
     TokenVerificationError,
@@ -30,10 +30,10 @@ def _bearer_token(authorization: str | None) -> str:
 
 async def get_authenticated_identity(
     request: Request,
+    settings: Annotated[Settings, Depends(get_settings)],
     authorization: Annotated[str | None, Header()] = None,
 ) -> AuthenticatedIdentity:
     """Verify the request bearer token and return its external identity."""
-    settings = get_settings()
     if settings.DISABLE_AUTH:
         return AuthenticatedIdentity(
             issuer=str(settings.KEYCLOAK_ISSUER),

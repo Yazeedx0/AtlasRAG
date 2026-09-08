@@ -496,14 +496,13 @@ async def test_database_rejects_duplicate_active_permission_grants(
             principal_id=principal_id,
             permission=Permission.IAM_GROUPS_MANAGE,
         )
-        await add_permission_grant(
-            session,
-            principal_id=principal_id,
-            permission=Permission.IAM_GROUPS_MANAGE,
-        )
 
         with pytest.raises(IntegrityError):
-            await session.commit()
+            await add_permission_grant(
+                session,
+                principal_id=principal_id,
+                permission=Permission.IAM_GROUPS_MANAGE,
+            )
 
 
 @pytest.mark.integration

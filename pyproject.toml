@@ -40,6 +40,7 @@ dependencies = [
     "aioboto3==15.5.0",
     "python-multipart>=0.0.32",
     "google-genai==2.21.0",
+    "celery[redis]==5.6.3",
 ]
 
 [project.optional-dependencies]
@@ -95,7 +96,7 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
-addopts = "-q --strict-markers"
+addopts = "-q --strict-markers --import-mode=importlib"
 markers = [
     "unit: no external services required",
     "integration: requires Postgres/Redis (testcontainers)",
@@ -114,12 +115,8 @@ name = "Modules are independent of each other"
 type = "independence"
 modules = [
     "atlasrag.modules.identity",
-    "atlasrag.modules.documents",
     "atlasrag.modules.ingestion",
-    "atlasrag.modules.retrieval",
-    "atlasrag.modules.answering",
-    "atlasrag.modules.conversations",
-    "atlasrag.modules.feedback",
+    "atlasrag.modules.knowledge",
 ]
 
 [[tool.importlinter.contracts]]

@@ -1,18 +1,12 @@
 import hashlib
-from collections.abc import AsyncIterator, Iterator
-from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-import aioboto3
 import pytest
-import pytest_asyncio
 from apps.api.dependencies.knowledge import make_knowledge_unit_of_work_factory
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
-from testcontainers.core.container import DockerContainer
-from testcontainers.core.wait_strategies import HttpWaitStrategy
 
 from atlasrag.contracts.documents import CreateDocumentArtifact, UploadDocumentArtifact
 from atlasrag.contracts.error.document_errors import DocumentArtifactConflict
@@ -27,71 +21,6 @@ from atlasrag.modules.knowledge.services.document_artifact_upload import (
     DocumentArtifactUploadService,
 )
 from atlasrag.platform.storage import MinioObjectStorage
-
-_MINIO_IMAGE = "minio/minio:RELEASE.2025-04-22T22-12-26Z"
-_MINIO_ACCESS_KEY = "atlas-test"
-_MINIO_SECRET_KEY = "atlas-test-password"
-_MINIO_BUCKET = "atlasrag-tests"
-_MINIO_PORT = 9000
-_MINIO_REGION = "us-east-1"
-
-
-@dataclass(frozen=True, slots=True)
-class MinioTestConfig:
-    endpoint_url: str
-    access_key: str
-    secret_key: str
-    bucket: str
-    region: str
-
-
-@pytest.fixture(scope="session")
-def minio_test_config() -> Iterator[MinioTestConfig]:
-    container = (
-        DockerContainer(_MINIO_IMAGE)
-        .with_exposed_ports(_MINIO_PORT)
-        .with_env("MINIO_ROOT_USER", _MINIO_ACCESS_KEY)
-        .with_env("MINIO_ROOT_PASSWORD", _MINIO_SECRET_KEY)
-        .with_command(f"server /data --address :{_MINIO_PORT}")
-        .waiting_for(
-            HttpWaitStrategy(_MINIO_PORT, "/minio/health/live").with_startup_timeout(60)
-        )
-    )
-    with container:
-        host = container.get_container_host_ip()
-        port = container.get_exposed_port(_MINIO_PORT)
-        yield MinioTestConfig(
-            endpoint_url=f"http://{host}:{port}",
-            access_key=_MINIO_ACCESS_KEY,
-            secret_key=_MINIO_SECRET_KEY,
-            bucket=_MINIO_BUCKET,
-            region=_MINIO_REGION,
-        )
-
-
-@pytest_asyncio.fixture
-async def minio_object_storage(
-    minio_test_config: MinioTestConfig,
-) -> AsyncIterator[MinioObjectStorage]:
-    session = aioboto3.Session()
-    async with session.client(
-        "s3",
-        endpoint_url=minio_test_config.endpoint_url,
-        use_ssl=False,
-        aws_access_key_id=minio_test_config.access_key,
-        aws_secret_access_key=minio_test_config.secret_key,
-        region_name=minio_test_config.region,
-    ) as client:
-        await client.create_bucket(Bucket=minio_test_config.bucket)
-
-    yield MinioObjectStorage(
-        endpoint_url=minio_test_config.endpoint_url,
-        use_ssl=False,
-        access_key=minio_test_config.access_key,
-        secret_key=minio_test_config.secret_key,
-        bucket=minio_test_config.bucket,
-        region=minio_test_config.region,
-    )
 
 
 async def add_user(session: AsyncSession, *, principal_id: UUID) -> None:

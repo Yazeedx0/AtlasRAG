@@ -32,6 +32,7 @@ def _item_columns() -> tuple[object, ...]:
     return (
         IngestionItem.id,
         IngestionItem.ingestion_run_id,
+        IngestionItem.ingestion_run_id,
         IngestionItem.document_artifact_id,
         IngestionItem.status,
         IngestionItem.attempt_count,
@@ -165,6 +166,7 @@ class IngestionRepository:
             )
             .returning(
                 IngestionItem.id,
+                IngestionItem.ingestion_run_id,
                 IngestionItem.document_artifact_id,
                 IngestionItem.attempt_count,
                 IngestionItem.claimed_at,
@@ -181,6 +183,7 @@ class IngestionRepository:
             attempt_number=row.attempt_count,
             claimed_at=row.claimed_at,
             lease_expires_at=row.lease_expires_at,
+            ingestion_run_id=row.ingestion_run_id,
         )
 
     async def heartbeat(

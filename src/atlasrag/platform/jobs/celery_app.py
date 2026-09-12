@@ -13,6 +13,7 @@ from atlasrag.platform.jobs.constants import (
 celery_app = Celery(
     "atlasrag",
     include=[
+        "atlasrag.platform.jobs.tasks.embedding",
         "atlasrag.platform.jobs.tasks.ingestion",
         "atlasrag.platform.jobs.tasks.maintenance",
     ],
@@ -29,6 +30,9 @@ def create_celery_app(
     ingestion_lease_seconds: int = 60,
     ingestion_heartbeat_seconds: int = 20,
     ingestion_max_attempts: int = 3,
+    embedding_lease_seconds: int = 120,
+    embedding_heartbeat_seconds: int = 30,
+    embedding_max_attempts: int = 3,
 ) -> Celery:
     celery_app.conf.update(
         broker_url=broker_url,
@@ -46,6 +50,9 @@ def create_celery_app(
         atlas_ingestion_lease_seconds=ingestion_lease_seconds,
         atlas_ingestion_heartbeat_seconds=ingestion_heartbeat_seconds,
         atlas_ingestion_max_attempts=ingestion_max_attempts,
+        atlas_embedding_lease_seconds=embedding_lease_seconds,
+        atlas_embedding_heartbeat_seconds=embedding_heartbeat_seconds,
+        atlas_embedding_max_attempts=embedding_max_attempts,
         task_default_queue=INGESTION_QUEUE,
         task_queues=(
             Queue(INGESTION_QUEUE),

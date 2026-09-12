@@ -3,8 +3,12 @@ from uuid import UUID
 from sqlalchemy import delete, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from atlasrag.contracts.error.ingestion_errors import ChunkSetImmutable
 from atlasrag.contracts.types.chunking import ChunkContentType, ChunkDraft
-from atlasrag.modules.ingestion.models import Chunk
+from atlasrag.contracts.types.ingestion import IngestionStatus
+from atlasrag.modules.ingestion.models import Chunk, IngestionItem
+
+COMPLETED_CHUNK_SET_IS_FROZEN = "ingestion item is completed"
 
 
 class SqlAlchemyChunkRepository:
@@ -17,6 +21,7 @@ class SqlAlchemyChunkRepository:
         ingestion_item_id: UUID,
         chunks: tuple[ChunkDraft, ...],
     ) -> None:
+        await self._guard_mutable_chunk_set(ingestion_item_id=ingestion_item_id)
         await self._session.execute(
             delete(Chunk).where(Chunk.ingestion_item_id == ingestion_item_id)
         )
@@ -41,6 +46,7 @@ class SqlAlchemyChunkRepository:
                     for chunk in chunks
                 ],
             )
+        return None
 
     async def list_for_item(self, *, ingestion_item_id: UUID) -> tuple[ChunkDraft, ...]:
         rows = (
@@ -67,5 +73,19 @@ class SqlAlchemyChunkRepository:
             for row in rows
         )
 
+    async def _guard_mutable_chunk_set(self, *, ingestion_item_id: UUID) -> None:
+        # Embedding runs treat the chunk set of a completed item as immutable. The
+        # owning row is locked so a concurrent completion cannot slip in between.
+        status = (
+            await self._session.execute(
+                select(IngestionItem.status)
+                .where(IngestionItem.id == ingestion_item_id)
+                .with_for_update()
+            )
+        ).scalar_one_or_none()
+        if status is IngestionStatus.COMPLETED:
+            raise ChunkSetImmutable(reason=COMPLETED_CHUNK_SET_IS_FROZEN)
+        return None
 
-__all__ = ["SqlAlchemyChunkRepository"]
+
+__all__ = ["COMPLETED_CHUNK_SET_IS_FROZEN", "SqlAlchemyChunkRepository"]

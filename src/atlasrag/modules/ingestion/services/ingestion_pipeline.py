@@ -1,5 +1,3 @@
-import hashlib
-import json
 from collections.abc import Mapping
 from dataclasses import dataclass
 from uuid import UUID, uuid4
@@ -19,6 +17,7 @@ from atlasrag.modules.knowledge.services.document_management import (
 from atlasrag.modules.knowledge.services.document_version_management import (
     DocumentVersionManagementService,
 )
+from atlasrag.platform.configuration_hash import canonical_configuration_hash
 
 DEFAULT_VERSION_LABEL = "v1"
 DEFAULT_ARTIFACT_KEY = "source"
@@ -110,7 +109,7 @@ class IngestionPipelineService:
         }
         run_id = await self._lifecycle.create_run(
             configuration=configuration,
-            configuration_hash=_configuration_hash(configuration),
+            configuration_hash=canonical_configuration_hash(configuration),
             created_by_principal_id=actor_principal_id,
         )
         item_id = await self._lifecycle.add_item(
@@ -126,11 +125,6 @@ class IngestionPipelineService:
             ingestion_item_id=item_id,
             status=IngestionStatus.PENDING,
         )
-
-
-def _configuration_hash(configuration: Mapping[str, object]) -> str:
-    serialized = json.dumps(configuration, sort_keys=True, separators=(",", ":"))
-    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
 
 __all__ = [

@@ -5,6 +5,7 @@ from pydantic import AnyHttpUrl, Field, PostgresDsn, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from atlasrag.contracts.types.ai_types import AiProvider
+from atlasrag.contracts.types.embedding import VectorDistanceMetric
 
 
 class Environment(Enum):
@@ -55,6 +56,10 @@ class Settings(BaseSettings):
     GENERATION_MODEL: str = Field(default="gpt-4o-mini", min_length=1)
     EMBEDDING_PROVIDER: AiProvider = AiProvider.OPENAI
     EMBEDDING_MODEL: str = Field(default="text-embedding-3-small", min_length=1)
+    EMBEDDING_MODEL_REVISION: str = Field(default="v1", min_length=1)
+    EMBEDDING_DIMENSION: int = Field(default=1536, gt=0, le=16000)
+    EMBEDDING_DISTANCE_METRIC: VectorDistanceMetric = VectorDistanceMetric.COSINE
+    EMBEDDING_MAX_INPUT_TOKENS: int = Field(default=8191, gt=0)
     RERANK_PROVIDER: AiProvider = AiProvider.COHERE
     RERANK_MODEL: str = Field(default="rerank-v3.5", min_length=1)
     OCR_MODEL: str = Field(default="gpt-4o", min_length=1)
@@ -98,6 +103,13 @@ class Settings(BaseSettings):
     INGESTION_LEASE_SECONDS: int = Field(gt=0)
     INGESTION_HEARTBEAT_SECONDS: int = Field(gt=0)
     INGESTION_MAX_ATTEMPTS: int = Field(default=3, ge=1)
+    EMBEDDING_LEASE_SECONDS: int = Field(default=120, gt=0)
+    EMBEDDING_HEARTBEAT_SECONDS: int = Field(default=30, gt=0)
+    EMBEDDING_MAX_ATTEMPTS: int = Field(default=3, ge=1)
+    EMBEDDING_BATCH_SIZE: int = Field(default=128, ge=1)
+    EMBEDDING_MAX_BATCH_TOKENS: int = Field(default=100_000, ge=1)
+    EMBEDDING_CONCURRENCY: int = Field(default=4, ge=1)
+    EMBEDDING_MAX_PROVIDER_ATTEMPTS: int = Field(default=4, ge=1)
 
     model_config = SettingsConfigDict(
         env_prefix="ATLAS_",
@@ -112,6 +124,15 @@ class Settings(BaseSettings):
             raise ValueError(
                 "INGESTION_HEARTBEAT_SECONDS must be less than "
                 "INGESTION_LEASE_SECONDS"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def validate_embedding_lease_settings(self) -> "Settings":
+        if self.EMBEDDING_HEARTBEAT_SECONDS >= self.EMBEDDING_LEASE_SECONDS:
+            raise ValueError(
+                "EMBEDDING_HEARTBEAT_SECONDS must be less than "
+                "EMBEDDING_LEASE_SECONDS"
             )
         return self
 

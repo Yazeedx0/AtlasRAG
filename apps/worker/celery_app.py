@@ -12,6 +12,9 @@ create_celery_app(
     ingestion_lease_seconds=settings.INGESTION_LEASE_SECONDS,
     ingestion_heartbeat_seconds=settings.INGESTION_HEARTBEAT_SECONDS,
     ingestion_max_attempts=settings.INGESTION_MAX_ATTEMPTS,
+    embedding_lease_seconds=settings.EMBEDDING_LEASE_SECONDS,
+    embedding_heartbeat_seconds=settings.EMBEDDING_HEARTBEAT_SECONDS,
+    embedding_max_attempts=settings.EMBEDDING_MAX_ATTEMPTS,
 )
 
 __all__ = ["celery_app"]

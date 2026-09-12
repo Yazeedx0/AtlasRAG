@@ -17,6 +17,7 @@ from testcontainers.core.container import DockerContainer
 from testcontainers.core.wait_strategies import HttpWaitStrategy
 from testcontainers.postgres import PostgresContainer
 
+from atlasrag.modules.embedding import models as _embedding_models  # noqa: F401
 from atlasrag.modules.identity import models as _identity_models  # noqa: F401
 from atlasrag.modules.ingestion import models as _ingestion_models  # noqa: F401
 from atlasrag.modules.knowledge import models as _knowledge_models  # noqa: F401
@@ -24,6 +25,7 @@ from atlasrag.platform.database import Base
 from atlasrag.platform.jobs import models as _job_models  # noqa: F401
 from atlasrag.platform.storage import MinioObjectStorage
 
+_POSTGRES_IMAGE = "pgvector/pgvector:0.8.6-pg17-trixie"
 _MINIO_IMAGE = "minio/minio:RELEASE.2025-04-22T22-12-26Z"
 _MINIO_ACCESS_KEY = "atlas-test"
 _MINIO_SECRET_KEY = "atlas-test-password"
@@ -56,7 +58,7 @@ def postgres_url() -> Iterator[str]:
         yield _asyncpg_url(configured_url)
         return
 
-    with PostgresContainer("postgres:16-alpine") as postgres:
+    with PostgresContainer(_POSTGRES_IMAGE) as postgres:
         yield _asyncpg_url(postgres.get_connection_url())
 
 
@@ -121,6 +123,7 @@ async def identity_database(
         await connection.execute(text("CREATE SCHEMA IF NOT EXISTS knowledge"))
         await connection.execute(text("CREATE SCHEMA IF NOT EXISTS platform"))
         await connection.execute(text("CREATE EXTENSION IF NOT EXISTS btree_gist"))
+        await connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await connection.run_sync(Base.metadata.drop_all)
         await connection.run_sync(Base.metadata.create_all)
 

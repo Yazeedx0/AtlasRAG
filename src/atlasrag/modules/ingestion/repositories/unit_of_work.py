@@ -6,17 +6,22 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.sql import ColumnElement
 
 from atlasrag.contracts.ingestion import (
+    ChunkRepository,
     IngestionLifecycleRepository,
+)
+from atlasrag.contracts.ingestion import (
     IngestionUnitOfWork as IngestionUnitOfWorkContract,
 )
 from atlasrag.contracts.jobs import JobOutboxRepository
 from atlasrag.platform.jobs import OutboxRepository
 
+from .chunk import SqlAlchemyChunkRepository
 from .ingestion import IngestionRepository
 
 
 class IngestionUnitOfWork:
     ingestion: IngestionLifecycleRepository
+    chunks: ChunkRepository
     outbox: JobOutboxRepository
 
     def __init__(
@@ -32,6 +37,7 @@ class IngestionUnitOfWork:
     async def __aenter__(self) -> "IngestionUnitOfWork":
         self._session = self._session_factory()
         self.ingestion = IngestionRepository(self._session, db_time=self._db_time)
+        self.chunks = SqlAlchemyChunkRepository(self._session)
         self.outbox = OutboxRepository(self._session)
         return self
 

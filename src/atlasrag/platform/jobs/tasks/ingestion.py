@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from atlasrag.bootstrap.core.config import get_settings
 from atlasrag.contracts.object_storage import ObjectStorage
+from atlasrag.modules.ingestion.chunking import ChunkerResolver, WhitespaceReferenceTokenizer
 from atlasrag.modules.ingestion.extraction import create_extraction_pipeline
 from atlasrag.modules.ingestion.extraction.pipeline import ExtractionPipeline
 from atlasrag.modules.ingestion.repositories.unit_of_work import (
@@ -95,6 +96,13 @@ async def _handle_item(
                 ),
                 extraction_pipeline=extraction_pipeline,
                 lifecycle=lifecycle,
+                chunker_resolver=ChunkerResolver(
+                    tokenizers={
+                        (WhitespaceReferenceTokenizer.name, WhitespaceReferenceTokenizer.version): (
+                            WhitespaceReferenceTokenizer()
+                        )
+                    }
+                ),
             ),
             heartbeat=LeaseHeartbeat(
                 lifecycle,

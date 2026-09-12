@@ -4,6 +4,7 @@ from typing import Protocol
 from uuid import UUID
 
 from atlasrag.contracts.jobs import JobOutboxRepository
+from atlasrag.contracts.types.chunking import ChunkDraft
 from atlasrag.contracts.types.ingestion import (
     ClaimedIngestionItem,
     IngestionItemState,
@@ -98,8 +99,22 @@ class IngestionLifecycleRepository(Protocol):
         ...
 
 
+class ChunkRepository(Protocol):
+    async def replace_for_item(
+        self,
+        *,
+        ingestion_item_id: UUID,
+        chunks: tuple[ChunkDraft, ...],
+    ) -> None:
+        ...
+
+    async def list_for_item(self, *, ingestion_item_id: UUID) -> tuple[ChunkDraft, ...]:
+        ...
+
+
 class IngestionUnitOfWork(Protocol):
     ingestion: IngestionLifecycleRepository
+    chunks: ChunkRepository
     outbox: JobOutboxRepository
 
     async def __aenter__(self) -> "IngestionUnitOfWork":
@@ -117,4 +132,4 @@ class IngestionUnitOfWork(Protocol):
         ...
 
 
-__all__ = ["IngestionLifecycleRepository", "IngestionUnitOfWork"]
+__all__ = ["ChunkRepository", "IngestionLifecycleRepository", "IngestionUnitOfWork"]

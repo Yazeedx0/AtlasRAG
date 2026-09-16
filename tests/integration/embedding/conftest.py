@@ -49,11 +49,23 @@ class FakeClock:
         self.now += delta
 
 
+class RecordingEmbeddingDispatcher:
+    def __init__(self) -> None:
+        self.dispatched: list[UUID] = []
+        self.failure: Exception | None = None
+
+    async def dispatch_embedding_run(self, *, embedding_run_id: UUID) -> None:
+        if self.failure is not None:
+            raise self.failure
+        self.dispatched.append(embedding_run_id)
+
+
 @dataclass(frozen=True, slots=True)
 class EmbeddingWorld:
     session_factory: async_sessionmaker[AsyncSession]
     clock: Callable[[], datetime]
     embedding: EmbeddingLifecycleService
+    dispatcher: RecordingEmbeddingDispatcher
     registry: EmbeddingModelRegistryService
     ingestion: IngestionLifecycleService
 
@@ -92,15 +104,18 @@ def make_world(
         chunk_source_factory=EmbeddableChunkRepository,
         db_time=db_time,
     )
+    dispatcher = RecordingEmbeddingDispatcher()
     return EmbeddingWorld(
         session_factory=session_factory,
         clock=clock,
         embedding=EmbeddingLifecycleService(
             embedding_uow,
+            dispatcher=dispatcher,
             lease_duration=LEASE_DURATION,
             max_attempts=MAX_ATTEMPTS,
             clock=clock,
         ),
+        dispatcher=dispatcher,
         registry=EmbeddingModelRegistryService(embedding_uow),
         ingestion=IngestionLifecycleService(
             make_ingestion_unit_of_work_factory(session_factory, db_time=db_time),
@@ -124,15 +139,18 @@ def make_realtime_world(
         chunk_source_factory=EmbeddableChunkRepository,
     )
     clock = RealClock()
+    dispatcher = RecordingEmbeddingDispatcher()
     return EmbeddingWorld(
         session_factory=session_factory,
         clock=clock,
         embedding=EmbeddingLifecycleService(
             embedding_uow,
+            dispatcher=dispatcher,
             lease_duration=LEASE_DURATION,
             max_attempts=MAX_ATTEMPTS,
             clock=clock,
         ),
+        dispatcher=dispatcher,
         registry=EmbeddingModelRegistryService(embedding_uow),
         ingestion=IngestionLifecycleService(
             make_ingestion_unit_of_work_factory(session_factory),

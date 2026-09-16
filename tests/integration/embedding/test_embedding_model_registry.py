@@ -71,6 +71,16 @@ async def test_a_different_revision_is_a_separate_model(embedding_world) -> None
 
 
 @pytest.mark.asyncio
+async def test_a_different_dimension_is_a_separate_model_identity(embedding_world) -> None:
+    first = await embedding_world.registry.register(identity=default_model_identity(dimension=512))
+    second = await embedding_world.registry.register(
+        identity=default_model_identity(dimension=1536)
+    )
+
+    assert first != second
+
+
+@pytest.mark.asyncio
 async def test_a_materially_different_configuration_is_a_separate_model(
     embedding_world,
 ) -> None:

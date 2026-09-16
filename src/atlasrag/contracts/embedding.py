@@ -3,7 +3,6 @@ from types import TracebackType
 from typing import Protocol, runtime_checkable
 from uuid import UUID
 
-from atlasrag.contracts.jobs import JobOutboxRepository
 from atlasrag.contracts.types.embedding import (
     ChunkVector,
     ClaimedEmbeddingRun,
@@ -13,12 +12,20 @@ from atlasrag.contracts.types.embedding import (
     EmbeddingModelIdentity,
     EmbeddingModelState,
     EmbeddingRunState,
+    VectorDistanceMetric,
 )
 
 
 @runtime_checkable
 class EmbeddingProvider(Protocol):
     async def embed(self, *, request: EmbeddingBatchRequest) -> EmbeddingBatchResult:
+        ...
+
+
+class EmbeddingRunDispatcher(Protocol):
+    """Best-effort transport notification for a durable embedding run."""
+
+    async def dispatch_embedding_run(self, *, embedding_run_id: UUID) -> None:
         ...
 
 
@@ -41,6 +48,9 @@ class EmbeddingModelRepository(Protocol):
         provider: str,
         model_name: str,
         model_revision: str,
+        dimension: int,
+        distance_metric: VectorDistanceMetric,
+        max_input_tokens: int | None,
         configuration_hash: str,
     ) -> EmbeddingModelState | None:
         ...
@@ -68,6 +78,17 @@ class EmbeddingRunRepository(Protocol):
         ingestion_item_id: UUID,
         embedding_model_id: UUID,
     ) -> EmbeddingRunState | None:
+        ...
+
+    async def find_stale_pending_runs(
+        self,
+        *,
+        pending_before: datetime,
+        limit: int,
+    ) -> tuple[EmbeddingRunState, ...]:
+        ...
+
+    async def find_expired_runs(self, *, limit: int) -> tuple[EmbeddingRunState, ...]:
         ...
 
     async def claim_run(
@@ -167,7 +188,6 @@ class EmbeddingUnitOfWork(Protocol):
     runs: EmbeddingRunRepository
     embeddings: ChunkEmbeddingRepository
     chunks: EmbeddingChunkSourceRepository
-    outbox: JobOutboxRepository
 
     async def __aenter__(self) -> "EmbeddingUnitOfWork":
         ...
@@ -189,6 +209,7 @@ __all__ = [
     "EmbeddingChunkSourceRepository",
     "EmbeddingModelRepository",
     "EmbeddingProvider",
+    "EmbeddingRunDispatcher",
     "EmbeddingRunRepository",
     "EmbeddingUnitOfWork",
 ]

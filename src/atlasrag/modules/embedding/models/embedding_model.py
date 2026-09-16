@@ -4,9 +4,9 @@ from datetime import datetime
 from sqlalchemy import (
     CheckConstraint,
     DateTime,
+    Index,
     Integer,
     String,
-    UniqueConstraint,
     func,
     text,
 )
@@ -41,12 +41,16 @@ class EmbeddingModel(Base):
         ),
         CheckConstraint("length(btrim(model_name)) > 0", name="model_name_non_empty"),
         CheckConstraint("length(btrim(model_revision)) > 0", name="model_revision_non_empty"),
-        UniqueConstraint(
+        Index(
+            "uq_embedding_models_identity",
             "provider",
             "model_name",
             "model_revision",
+            "dimension",
+            "distance_metric",
+            text("COALESCE(max_input_tokens, -1)"),
             "configuration_hash",
-            name="uq_embedding_models_identity",
+            unique=True,
         ),
         {"schema": "knowledge"},
     )

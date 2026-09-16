@@ -8,6 +8,7 @@ from atlasrag.platform.jobs.constants import (
     PROCESS_EMBEDDING_TASK,
     PROCESS_INGESTION_TASK,
     PUBLISH_OUTBOX_TASK,
+    RECOVER_EMBEDDING_TASK,
 )
 
 celery_app = Celery(
@@ -33,6 +34,9 @@ def create_celery_app(
     embedding_lease_seconds: int = 120,
     embedding_heartbeat_seconds: int = 30,
     embedding_max_attempts: int = 3,
+    embedding_pending_recovery_age_seconds: int = 60,
+    embedding_recovery_batch_size: int = 100,
+    embedding_recovery_interval_seconds: int = 30,
 ) -> Celery:
     celery_app.conf.update(
         broker_url=broker_url,
@@ -53,6 +57,8 @@ def create_celery_app(
         atlas_embedding_lease_seconds=embedding_lease_seconds,
         atlas_embedding_heartbeat_seconds=embedding_heartbeat_seconds,
         atlas_embedding_max_attempts=embedding_max_attempts,
+        atlas_embedding_pending_recovery_age_seconds=embedding_pending_recovery_age_seconds,
+        atlas_embedding_recovery_batch_size=embedding_recovery_batch_size,
         task_default_queue=INGESTION_QUEUE,
         task_queues=(
             Queue(INGESTION_QUEUE),
@@ -63,7 +69,14 @@ def create_celery_app(
             PROCESS_INGESTION_TASK: {"queue": INGESTION_QUEUE},
             PROCESS_EMBEDDING_TASK: {"queue": EMBEDDING_QUEUE},
             PUBLISH_OUTBOX_TASK: {"queue": MAINTENANCE_QUEUE},
+            RECOVER_EMBEDDING_TASK: {"queue": MAINTENANCE_QUEUE},
             "atlasrag.maintenance.*": {"queue": MAINTENANCE_QUEUE},
+        },
+        beat_schedule={
+            "recover-embedding-runs": {
+                "task": RECOVER_EMBEDDING_TASK,
+                "schedule": embedding_recovery_interval_seconds,
+            },
         },
     )
     return celery_app

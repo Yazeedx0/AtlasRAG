@@ -13,13 +13,13 @@ from atlasrag.contracts.types.embedding import (
     EmbeddingUsage,
     EmbeddingVector,
 )
-from atlasrag.contracts.types.jobs import JobType
+from atlasrag.modules.embedding.repositories import make_embedding_unit_of_work_factory
+from atlasrag.modules.embedding.services import EmbeddingLifecycleService
+from atlasrag.modules.ingestion.repositories import EmbeddableChunkRepository
 from atlasrag.platform.jobs import tasks as _tasks  # noqa: F401
 from atlasrag.platform.jobs.celery_app import create_celery_app
-from atlasrag.platform.jobs.celery_dispatcher import CeleryTaskDispatcher
-from atlasrag.platform.jobs.publisher import OutboxPublisher
+from atlasrag.platform.jobs.embedding_dispatcher import CeleryEmbeddingRunDispatcher
 from atlasrag.platform.jobs.tasks import embedding as embedding_task
-from atlasrag.platform.jobs.unit_of_work import make_job_outbox_unit_of_work_factory
 from atlasrag.platform.jobs.worker_runtime import get_worker_async_runtime
 
 from .conftest import (
@@ -77,14 +77,13 @@ async def wait_for_completion(world, run_id) -> None:
     deadline = datetime.now(UTC) + timedelta(seconds=COMPLETION_TIMEOUT_SECONDS)
     while datetime.now(UTC) < deadline:
         run = await world.embedding.find_run(run_id=run_id)
-        if run is not None and run.status is not EmbeddingStatus.PENDING:
-            if run.status in (EmbeddingStatus.COMPLETED, EmbeddingStatus.FAILED):
-                return
+        if run is not None and run.status in (EmbeddingStatus.COMPLETED, EmbeddingStatus.FAILED):
+            return
         await asyncio.sleep(0.25)
 
 
 @pytest.mark.asyncio
-async def test_outbox_publishes_to_redis_and_the_worker_embeds_every_chunk(
+async def test_direct_redis_dispatch_and_worker_embed_every_chunk(
     identity_database,
     realtime_embedding_world,
     seed_realtime_completed_item,
@@ -93,22 +92,6 @@ async def test_outbox_publishes_to_redis_and_the_worker_embeds_every_chunk(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     engine, session_factory = identity_database
-    world = realtime_embedding_world
-    seeded = await seed_realtime_completed_item(chunk_count=CHUNK_COUNT)
-    model_id = await world.registry.register(identity=default_model_identity())
-    run_id = await world.embedding.create_run(
-        ingestion_item_id=seeded.ingestion_item_id,
-        embedding_model_id=model_id,
-        configuration=embedding_run_configuration(batch_size=BATCH_SIZE, concurrency=2),
-    )
-
-    provider = RecordedProvider()
-    monkeypatch.setattr(
-        embedding_task,
-        "create_embedding_provider",
-        lambda settings, provider=None: provider,  # noqa: ARG005
-    )
-
     celery_app = create_celery_app(
         broker_url=redis_broker_url,
         database_url=str(engine.url.render_as_string(hide_password=False)),
@@ -120,12 +103,29 @@ async def test_outbox_publishes_to_redis_and_the_worker_embeds_every_chunk(
         embedding_max_attempts=3,
     )
     celery_app.loader.import_default_modules()
-
-    publisher = OutboxPublisher(
-        make_job_outbox_unit_of_work_factory(session_factory),
-        CeleryTaskDispatcher(celery_app),
-        lease_duration=timedelta(minutes=1),
+    world = realtime_embedding_world
+    seeded = await seed_realtime_completed_item(chunk_count=CHUNK_COUNT)
+    model_id = await world.registry.register(identity=default_model_identity())
+    lifecycle = EmbeddingLifecycleService(
+        make_embedding_unit_of_work_factory(
+            session_factory,
+            chunk_source_factory=EmbeddableChunkRepository,
+        ),
+        dispatcher=CeleryEmbeddingRunDispatcher(celery_app),
+        lease_duration=timedelta(seconds=120),
+        max_attempts=3,
         clock=lambda: datetime.now(UTC),
+    )
+    run_id = await lifecycle.create_run(
+        ingestion_item_id=seeded.ingestion_item_id,
+        embedding_model_id=model_id,
+        configuration=embedding_run_configuration(batch_size=BATCH_SIZE, concurrency=2),
+    )
+    recorded_provider = RecordedProvider()
+    monkeypatch.setattr(
+        embedding_task,
+        "create_embedding_provider",
+        lambda settings, provider=None: recorded_provider,
     )
 
     with start_worker(
@@ -134,14 +134,12 @@ async def test_outbox_publishes_to_redis_and_the_worker_embeds_every_chunk(
         queues=["atlasrag.embedding"],
         perform_ping_check=False,
     ):
-        report = await publisher.publish_pending(limit=10)
         await wait_for_completion(world, run_id)
 
     run = await world.embedding.find_run(run_id=run_id)
     rows = await stored_embeddings(world, model_id)
     item = await world.ingestion.find_item(item_id=seeded.ingestion_item_id)
 
-    assert report.published == 1
     assert run is not None
     assert run.status is EmbeddingStatus.COMPLETED
     assert run.attempt_count == 1
@@ -150,47 +148,7 @@ async def test_outbox_publishes_to_redis_and_the_worker_embeds_every_chunk(
     assert {row.chunk_id for row in rows} == set(seeded.chunk_ids)
     assert all(len(row.embedding) == DIMENSION for row in rows)
     assert all(row.embedding_run_id == run_id for row in rows)
-    assert provider.batch_sizes == [16, 16, 16, 16, 11]
+    assert recorded_provider.batch_sizes == [16, 16, 16, 16, 11]
     assert run.execution_metadata["embedding"]["embedded_chunk_count"] == CHUNK_COUNT
     assert item is not None
     assert item.activated_at is None
-
-
-@pytest.mark.asyncio
-async def test_embedding_outbox_job_maps_to_the_embedding_queue_task(
-    identity_database,
-    realtime_embedding_world,
-    seed_realtime_completed_item,
-) -> None:
-    _, session_factory = identity_database
-    world = realtime_embedding_world
-    seeded = await seed_realtime_completed_item(chunk_count=2)
-    model_id = await world.registry.register(identity=default_model_identity())
-    run_id = await world.embedding.create_run(
-        ingestion_item_id=seeded.ingestion_item_id,
-        embedding_model_id=model_id,
-        configuration=embedding_run_configuration(),
-    )
-
-    class RecordingDispatcher:
-        def __init__(self) -> None:
-            self.published: list[tuple[str, dict[str, object]]] = []
-
-        def publish(self, *, task_name: str, payload: dict[str, object]) -> None:
-            self.published.append((task_name, payload))
-
-    dispatcher = RecordingDispatcher()
-    publisher = OutboxPublisher(
-        make_job_outbox_unit_of_work_factory(session_factory),
-        dispatcher,
-        lease_duration=timedelta(minutes=1),
-        clock=lambda: datetime.now(UTC),
-    )
-
-    report = await publisher.publish_pending(limit=10)
-
-    assert report.published == 1
-    assert dispatcher.published == [
-        ("atlasrag.embedding.process", {"embedding_run_id": str(run_id)})
-    ]
-    assert JobType.PROCESS_EMBEDDING.value == "embedding.process"

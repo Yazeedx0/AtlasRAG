@@ -80,12 +80,18 @@ class EmbeddingModelRepository:
         provider: str,
         model_name: str,
         model_revision: str,
+        dimension: int,
+        distance_metric: VectorDistanceMetric,
+        max_input_tokens: int | None,
         configuration_hash: str,
     ) -> EmbeddingModelState | None:
         statement = select(*_model_columns()).where(
             EmbeddingModel.provider == provider,
             EmbeddingModel.model_name == model_name,
             EmbeddingModel.model_revision == model_revision,
+            EmbeddingModel.dimension == dimension,
+            EmbeddingModel.distance_metric == distance_metric,
+            EmbeddingModel.max_input_tokens == max_input_tokens,
             EmbeddingModel.configuration_hash == configuration_hash,
         )
         row = (await self._session.execute(statement)).one_or_none()

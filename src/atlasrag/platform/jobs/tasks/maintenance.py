@@ -6,7 +6,7 @@ from celery import Task
 from atlasrag.platform.jobs.celery_app import celery_app
 from atlasrag.platform.jobs.celery_dispatcher import CeleryTaskDispatcher
 from atlasrag.platform.jobs.constants import PUBLISH_OUTBOX_TASK
-from atlasrag.platform.jobs.publisher import OutboxPublishReport, OutboxPublisher
+from atlasrag.platform.jobs.publisher import OutboxPublisher, OutboxPublishReport
 from atlasrag.platform.jobs.unit_of_work import make_job_outbox_unit_of_work_factory
 from atlasrag.platform.jobs.worker_runtime import get_worker_async_runtime
 

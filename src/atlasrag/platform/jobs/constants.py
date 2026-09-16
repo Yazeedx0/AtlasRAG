@@ -6,6 +6,7 @@ MAINTENANCE_QUEUE = "atlasrag.maintenance"
 PROCESS_INGESTION_TASK = "atlasrag.ingestion.process"
 PROCESS_EMBEDDING_TASK = "atlasrag.embedding.process"
 PUBLISH_OUTBOX_TASK = "atlasrag.maintenance.publish_outbox"
+RECOVER_EMBEDDING_TASK = "atlasrag.maintenance.recover_embeddings"
 
 
 __all__ = [
@@ -15,4 +16,5 @@ __all__ = [
     "PROCESS_EMBEDDING_TASK",
     "PROCESS_INGESTION_TASK",
     "PUBLISH_OUTBOX_TASK",
+    "RECOVER_EMBEDDING_TASK",
 ]

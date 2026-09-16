@@ -6,7 +6,6 @@ from enum import StrEnum
 
 class JobType(StrEnum):
     PROCESS_INGESTION_ITEM = "ingestion.process"
-    PROCESS_EMBEDDING = "embedding.process"
 
 
 @dataclass(frozen=True, slots=True)

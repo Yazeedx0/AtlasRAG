@@ -2,7 +2,9 @@ import uuid
 from collections.abc import Callable
 from datetime import datetime, timedelta
 
-from atlasrag.contracts.embedding import EmbeddingUnitOfWork
+import structlog
+
+from atlasrag.contracts.embedding import EmbeddingRunDispatcher, EmbeddingUnitOfWork
 from atlasrag.contracts.error.embedding_errors import (
     ChunkSetChanged,
     EmbeddingRunAlreadyInFlight,
@@ -15,14 +17,14 @@ from atlasrag.contracts.types.embedding import (
     EmbeddingModelState,
     EmbeddingRunState,
 )
-from atlasrag.contracts.types.jobs import JobType
 from atlasrag.modules.embedding.repositories import MAX_ATTEMPTS_EXCEEDED
 from atlasrag.platform.configuration_hash import canonical_configuration_hash
 
-SUPERSEDED_BY_RETRY = "superseded_by_retry"
 INGESTION_ITEM_NOT_COMPLETED = "ingestion item is not completed"
 CHUNK_SET_MOVED_DURING_RUN = "chunk set no longer matches the loaded chunk set"
 INCOMPLETE_VECTOR_SET = "persisted vector count does not match the chunk count"
+
+logger = structlog.get_logger(__name__)
 
 
 class EmbeddingLifecycleService:
@@ -30,11 +32,13 @@ class EmbeddingLifecycleService:
         self,
         uow_factory: Callable[[], EmbeddingUnitOfWork],
         *,
+        dispatcher: EmbeddingRunDispatcher,
         lease_duration: timedelta,
         max_attempts: int,
         clock: Callable[[], datetime],
     ) -> None:
         self._uow_factory = uow_factory
+        self._dispatcher = dispatcher
         self._lease_duration = lease_duration
         self._max_attempts = max_attempts
         self._clock = clock
@@ -70,13 +74,8 @@ class EmbeddingLifecycleService:
                 configuration_hash=canonical_configuration_hash(configuration),
                 created_by_principal_id=created_by_principal_id,
             )
-            await uow.outbox.enqueue(
-                job_id=uuid.uuid4(),
-                job_type=JobType.PROCESS_EMBEDDING,
-                aggregate_id=run_id,
-                payload={"embedding_run_id": str(run_id)},
-            )
             await uow.commit()
+        await self._dispatch_best_effort(embedding_run_id=run_id, reason="created")
         return run_id
 
     async def find_run(self, *, run_id: uuid.UUID) -> EmbeddingRunState | None:
@@ -130,6 +129,7 @@ class EmbeddingLifecycleService:
         error_code: str,
         error_message: str | None = None,
     ) -> bool:
+        released_for_retry = False
         async with self._uow_factory() as uow:
             if attempt_number >= self._max_attempts:
                 rowcount = await uow.runs.mark_failed(
@@ -147,22 +147,12 @@ class EmbeddingLifecycleService:
                     error_code=error_code,
                     error_message=error_message,
                 )
-                if rowcount == 1:
-                    await uow.outbox.discard_pending_for_aggregate(
-                        job_type=JobType.PROCESS_EMBEDDING,
-                        aggregate_id=run_id,
-                        failed_at=self._clock(),
-                        failure_code=SUPERSEDED_BY_RETRY,
-                    )
-                    await uow.outbox.enqueue(
-                        job_id=uuid.uuid4(),
-                        job_type=JobType.PROCESS_EMBEDDING,
-                        aggregate_id=run_id,
-                        payload={"embedding_run_id": str(run_id)},
-                    )
+                released_for_retry = rowcount == 1
             if rowcount == 1:
                 await uow.commit()
-            return rowcount == 1
+        if released_for_retry:
+            await self._dispatch_best_effort(embedding_run_id=run_id, reason="retry")
+        return rowcount == 1
 
     async def mark_failed(
         self,
@@ -240,11 +230,21 @@ class EmbeddingLifecycleService:
                 await uow.commit()
             return count
 
+    async def _dispatch_best_effort(self, *, embedding_run_id: uuid.UUID, reason: str) -> None:
+        try:
+            await self._dispatcher.dispatch_embedding_run(embedding_run_id=embedding_run_id)
+        except Exception:
+            # PostgreSQL keeps the PENDING run durable; the recovery task will redispatch it.
+            logger.warning(
+                "embedding_dispatch_failed",
+                embedding_run_id=str(embedding_run_id),
+                reason=reason,
+            )
+
 
 __all__ = [
     "CHUNK_SET_MOVED_DURING_RUN",
     "INCOMPLETE_VECTOR_SET",
     "INGESTION_ITEM_NOT_COMPLETED",
-    "SUPERSEDED_BY_RETRY",
     "EmbeddingLifecycleService",
 ]

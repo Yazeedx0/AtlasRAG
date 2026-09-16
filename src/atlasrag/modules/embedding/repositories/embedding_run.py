@@ -127,6 +127,24 @@ class EmbeddingRunRepository:
         row = (await self._session.execute(statement)).one_or_none()
         return _to_run_state(row) if row is not None else None
 
+    async def find_stale_pending_runs(
+        self,
+        *,
+        pending_before: datetime,
+        limit: int,
+    ) -> tuple[EmbeddingRunState, ...]:
+        statement = (
+            select(*_run_columns())
+            .where(
+                EmbeddingRun.status == EmbeddingStatus.PENDING,
+                EmbeddingRun.created_at <= pending_before,
+            )
+            .order_by(EmbeddingRun.created_at)
+            .limit(limit)
+        )
+        rows = (await self._session.execute(statement)).all()
+        return tuple(_to_run_state(row) for row in rows)
+
     async def claim_run(
         self,
         *,

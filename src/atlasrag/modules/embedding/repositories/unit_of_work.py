@@ -20,8 +20,6 @@ from atlasrag.contracts.embedding import (
 from atlasrag.contracts.embedding import (
     EmbeddingUnitOfWork as EmbeddingUnitOfWorkContract,
 )
-from atlasrag.contracts.jobs import JobOutboxRepository
-from atlasrag.platform.jobs import OutboxRepository
 
 from .chunk_embedding import ChunkEmbeddingRepository
 from .embedding_model import EmbeddingModelRepository
@@ -35,7 +33,6 @@ class EmbeddingUnitOfWork:
     runs: EmbeddingRunRepositoryContract
     embeddings: ChunkEmbeddingRepositoryContract
     chunks: EmbeddingChunkSourceRepository
-    outbox: JobOutboxRepository
 
     def __init__(
         self,
@@ -55,7 +52,6 @@ class EmbeddingUnitOfWork:
         self.runs = EmbeddingRunRepository(self._session, db_time=self._db_time)
         self.embeddings = ChunkEmbeddingRepository(self._session)
         self.chunks = self._chunk_source_factory(self._session)
-        self.outbox = OutboxRepository(self._session)
         return self
 
     async def __aexit__(

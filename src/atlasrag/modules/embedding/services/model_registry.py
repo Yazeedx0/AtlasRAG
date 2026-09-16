@@ -17,6 +17,9 @@ class EmbeddingModelRegistryService:
                 provider=identity.provider.value,
                 model_name=identity.model_name,
                 model_revision=identity.model_revision,
+                dimension=identity.dimension,
+                distance_metric=identity.distance_metric,
+                max_input_tokens=identity.max_input_tokens,
                 configuration_hash=configuration_hash,
             )
             if existing is not None:

@@ -2,16 +2,13 @@ from datetime import timedelta
 from uuid import uuid4
 
 import pytest
-from sqlalchemy import select
 
 from atlasrag.contracts.error.embedding_errors import (
     EmbeddingRunAlreadyInFlight,
     IngestionItemNotEmbeddable,
 )
 from atlasrag.contracts.types.embedding import EmbeddingStatus
-from atlasrag.contracts.types.jobs import JobType
 from atlasrag.modules.embedding.repositories import MAX_ATTEMPTS_EXCEEDED
-from atlasrag.platform.jobs.models import JobOutbox
 
 from .conftest import (
     LEASE_DURATION,
@@ -35,19 +32,6 @@ async def create_run(world, seeded, **overrides):
         configuration=embedding_run_configuration(**overrides),
     )
     return model_id, run_id
-
-
-async def outbox_jobs(world, run_id):
-    async with world.session_factory() as session:
-        rows = (
-            await session.execute(
-                select(JobOutbox).where(
-                    JobOutbox.job_type == JobType.PROCESS_EMBEDDING.value,
-                    JobOutbox.aggregate_id == run_id,
-                )
-            )
-        ).scalars()
-        return list(rows)
 
 
 @pytest.mark.asyncio
@@ -83,17 +67,13 @@ async def test_run_creation_is_rejected_for_an_incomplete_ingestion_item(
 
 
 @pytest.mark.asyncio
-async def test_run_creation_enqueues_an_outbox_job_in_the_same_transaction(
+async def test_run_creation_commits_before_best_effort_direct_dispatch(
     embedding_world, seed_completed_item
 ) -> None:
     seeded = await seed_completed_item()
 
     _, run_id = await create_run(embedding_world, seeded)
-    jobs = await outbox_jobs(embedding_world, run_id)
-
-    assert len(jobs) == 1
-    assert jobs[0].payload == {"embedding_run_id": str(run_id)}
-    assert jobs[0].published_at is None
+    assert embedding_world.dispatcher.dispatched == [run_id]
 
 
 @pytest.mark.asyncio
@@ -288,7 +268,6 @@ async def test_transient_failure_schedules_a_durable_retry(
         error_code="transient_embedding_error",
     )
     run = await embedding_world.embedding.find_run(run_id=run_id)
-    jobs = await outbox_jobs(embedding_world, run_id)
 
     assert scheduled is True
     assert run is not None
@@ -296,8 +275,7 @@ async def test_transient_failure_schedules_a_durable_retry(
     assert run.claimed_at is None
     assert run.lease_expires_at is None
     assert run.attempt_count == 1
-    assert len(jobs) == 2
-    assert sum(1 for job in jobs if job.failure_code == "superseded_by_retry") == 1
+    assert embedding_world.dispatcher.dispatched == [run_id, run_id]
 
 
 @pytest.mark.asyncio

@@ -15,6 +15,9 @@ create_celery_app(
     embedding_lease_seconds=settings.EMBEDDING_LEASE_SECONDS,
     embedding_heartbeat_seconds=settings.EMBEDDING_HEARTBEAT_SECONDS,
     embedding_max_attempts=settings.EMBEDDING_MAX_ATTEMPTS,
+    embedding_pending_recovery_age_seconds=settings.EMBEDDING_PENDING_RECOVERY_AGE_SECONDS,
+    embedding_recovery_batch_size=settings.EMBEDDING_RECOVERY_BATCH_SIZE,
+    embedding_recovery_interval_seconds=settings.EMBEDDING_RECOVERY_INTERVAL_SECONDS,
 )
 
 __all__ = ["celery_app"]

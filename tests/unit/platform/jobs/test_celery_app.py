@@ -6,6 +6,7 @@ from atlasrag.platform.jobs.constants import (
     PROCESS_EMBEDDING_TASK,
     PROCESS_INGESTION_TASK,
     PUBLISH_OUTBOX_TASK,
+    RECOVER_EMBEDDING_TASK,
 )
 
 
@@ -26,5 +27,6 @@ def test_celery_app_routes_stable_tasks_to_their_configured_queues() -> None:
         PROCESS_INGESTION_TASK: {"queue": INGESTION_QUEUE},
         PROCESS_EMBEDDING_TASK: {"queue": EMBEDDING_QUEUE},
         PUBLISH_OUTBOX_TASK: {"queue": MAINTENANCE_QUEUE},
+        RECOVER_EMBEDDING_TASK: {"queue": MAINTENANCE_QUEUE},
         "atlasrag.maintenance.*": {"queue": MAINTENANCE_QUEUE},
     }

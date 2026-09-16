@@ -110,6 +110,9 @@ class Settings(BaseSettings):
     EMBEDDING_MAX_BATCH_TOKENS: int = Field(default=100_000, ge=1)
     EMBEDDING_CONCURRENCY: int = Field(default=4, ge=1)
     EMBEDDING_MAX_PROVIDER_ATTEMPTS: int = Field(default=4, ge=1)
+    EMBEDDING_PENDING_RECOVERY_AGE_SECONDS: int = Field(default=60, ge=1)
+    EMBEDDING_RECOVERY_BATCH_SIZE: int = Field(default=100, ge=1, le=1000)
+    EMBEDDING_RECOVERY_INTERVAL_SECONDS: int = Field(default=30, ge=1)
 
     model_config = SettingsConfigDict(
         env_prefix="ATLAS_",

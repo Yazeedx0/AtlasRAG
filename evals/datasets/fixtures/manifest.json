@@ -1,0 +1,13 @@
+{
+  "schema_version": "1",
+  "dataset_id": "chunking-structural",
+  "version": "1",
+  "fixtures": [
+    "en_prose_handbook.json",
+    "ar_prose_leave_policy.json",
+    "en_nested_headings_security.json",
+    "ar_table_financials.json",
+    "en_long_section_architecture.json",
+    "ar_long_section_procurement.json"
+  ]
+}

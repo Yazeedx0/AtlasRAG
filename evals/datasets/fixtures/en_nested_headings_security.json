@@ -1,0 +1,95 @@
+{
+  "schema_version": "1",
+  "fixture_id": "en_nested_headings_security",
+  "title": "Information Security Standard",
+  "language": "en",
+  "source_type": "nested_headings",
+  "document_metadata": {
+    "source_file": "infosec_standard_v4.md",
+    "language_code": "en"
+  },
+  "expected_structure": {
+    "heading_count": 6,
+    "table_count": 0,
+    "requires_splitting": false,
+    "pages_covered": [1, 2]
+  },
+  "annotated_boundaries": [
+    {
+      "after_block_index": 4,
+      "rationale": "Password requirements end before multi factor authentication, which is a sibling subsection under Access Control."
+    },
+    {
+      "after_block_index": 7,
+      "rationale": "Access Control ends before Data Handling; a chunk spanning this boundary loses the section heading that disambiguates the retention numbers."
+    }
+  ],
+  "blocks": [
+    {
+      "text": "Information Security Standard",
+      "block_type": "heading",
+      "page_number": 1,
+      "metadata": { "level": 1 }
+    },
+    {
+      "text": "This standard applies to all production systems and to any workstation that stores customer data. Exceptions require a documented risk acceptance signed by the chief information security officer.",
+      "block_type": "paragraph",
+      "page_number": 1,
+      "metadata": {}
+    },
+    {
+      "text": "Access Control",
+      "block_type": "heading",
+      "page_number": 1,
+      "metadata": { "level": 2 }
+    },
+    {
+      "text": "Password Requirements",
+      "block_type": "heading",
+      "page_number": 1,
+      "metadata": { "level": 3 }
+    },
+    {
+      "text": "Passwords must be at least fourteen characters. Rotation is not required on a fixed schedule; instead, credentials are rotated on suspicion of compromise and on any change of role that removes production access.",
+      "block_type": "paragraph",
+      "page_number": 1,
+      "metadata": {}
+    },
+    {
+      "text": "Multi Factor Authentication",
+      "block_type": "heading",
+      "page_number": 2,
+      "metadata": { "level": 3 }
+    },
+    {
+      "text": "Hardware security keys are mandatory for engineers with production database access. Time based one time passwords are acceptable for all other staff. Short message service codes are not an acceptable second factor for any account.",
+      "block_type": "paragraph",
+      "page_number": 2,
+      "metadata": {}
+    },
+    {
+      "text": "Emergency break glass accounts are exempt from the hardware key requirement, are stored in a sealed vault, and every use raises a page to the on call security engineer.",
+      "block_type": "paragraph",
+      "page_number": 2,
+      "metadata": {}
+    },
+    {
+      "text": "Data Handling",
+      "block_type": "heading",
+      "page_number": 2,
+      "metadata": { "level": 2 }
+    },
+    {
+      "text": "Retention",
+      "block_type": "heading",
+      "page_number": 2,
+      "metadata": { "level": 3 }
+    },
+    {
+      "text": "Customer records are retained for seven years after the end of the contract. Application logs are retained for ninety days. Security audit logs are retained for eighteen months and are written to append only storage.",
+      "block_type": "paragraph",
+      "page_number": 2,
+      "metadata": {}
+    }
+  ]
+}

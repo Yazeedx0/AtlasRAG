@@ -67,7 +67,7 @@ services:
     restart: unless-stopped
 
   minio:
-    image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
+    image: cgr.dev/chainguard/minio:latest-dev
 
     command: server /data --console-address ":9001"
 
@@ -92,7 +92,7 @@ services:
     restart: unless-stopped
 
   minio-init:
-    image: quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z
+    image: cgr.dev/chainguard/minio-client:latest-dev
 
     entrypoint: ["/bin/sh", "/create-bucket.sh"]
 

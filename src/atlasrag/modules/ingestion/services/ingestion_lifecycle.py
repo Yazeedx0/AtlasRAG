@@ -3,6 +3,7 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 
 from atlasrag.contracts.ingestion import IngestionUnitOfWork
+from atlasrag.contracts.types.chunking import ChunkDraft
 from atlasrag.contracts.types.ingestion import (
     ClaimedIngestionItem,
     IngestionItemState,
@@ -189,6 +190,32 @@ class IngestionLifecycleService:
             if rowcount == 1:
                 await uow.commit()
             return rowcount == 1
+
+    async def replace_chunks_and_mark_completed(
+        self,
+        *,
+        item_id: uuid.UUID,
+        attempt_number: int,
+        chunks: tuple[ChunkDraft, ...],
+        observed_file_hash: str,
+        execution_metadata: dict[str, object],
+    ) -> bool:
+        async with self._uow_factory() as uow:
+            await uow.chunks.replace_for_item(
+                ingestion_item_id=item_id,
+                chunks=chunks,
+            )
+            rowcount = await uow.ingestion.mark_completed(
+                item_id=item_id,
+                attempt_number=attempt_number,
+                now=self._clock(),
+                observed_file_hash=observed_file_hash,
+                execution_metadata=execution_metadata,
+            )
+            if rowcount != 1:
+                return False
+            await uow.commit()
+            return True
 
     async def reap_expired_items(self) -> int:
         async with self._uow_factory() as uow:

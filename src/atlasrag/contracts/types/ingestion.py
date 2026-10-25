@@ -18,6 +18,7 @@ class ClaimedIngestionItem:
     attempt_number: int
     claimed_at: datetime
     lease_expires_at: datetime
+    ingestion_run_id: uuid.UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,6 +29,7 @@ class LoadedArtifact:
     expected_file_hash: str
     observed_file_hash: str
     file_size_bytes: int
+    language_code: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

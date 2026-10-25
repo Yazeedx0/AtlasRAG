@@ -1,8 +1,12 @@
+import hashlib
+import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from uuid import UUID, uuid4
 
 from atlasrag.contracts.documents import UploadDocumentArtifact
 from atlasrag.contracts.types.ingestion import IngestionStatus
+from atlasrag.modules.ingestion.chunking import DEFAULT_CHUNKING_CONFIG, ChunkingConfig
 from atlasrag.modules.ingestion.services.ingestion_lifecycle import (
     IngestionLifecycleService,
 )
@@ -30,6 +34,7 @@ class IngestDocument:
     canonical_key: str | None = None
     version_label: str = DEFAULT_VERSION_LABEL
     artifact_key: str = DEFAULT_ARTIFACT_KEY
+    chunking_configuration: Mapping[str, object] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,9 +98,19 @@ class IngestionPipelineService:
             ),
             actor_principal_id=actor_principal_id,
         )
+        raw_chunking_configuration = (
+            command.chunking_configuration or DEFAULT_CHUNKING_CONFIG.as_mapping()
+        )
+        chunking_config = ChunkingConfig.from_run_configuration(
+            {"chunking": raw_chunking_configuration}
+        )
+        configuration: dict[str, object] = {
+            "language_code": command.language_code,
+            "chunking": chunking_config.as_mapping(),
+        }
         run_id = await self._lifecycle.create_run(
-            configuration={"language_code": command.language_code},
-            configuration_hash=command.language_code,
+            configuration=configuration,
+            configuration_hash=_configuration_hash(configuration),
             created_by_principal_id=actor_principal_id,
         )
         item_id = await self._lifecycle.add_item(
@@ -111,6 +126,11 @@ class IngestionPipelineService:
             ingestion_item_id=item_id,
             status=IngestionStatus.PENDING,
         )
+
+
+def _configuration_hash(configuration: Mapping[str, object]) -> str:
+    serialized = json.dumps(configuration, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
 
 __all__ = [

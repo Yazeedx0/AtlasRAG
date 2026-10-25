@@ -17,7 +17,16 @@ from atlasrag.contracts.types.extraction import (
     ExtractionMethod,
     ExtractionResult,
 )
-from atlasrag.contracts.types.ingestion import ClaimedIngestionItem, LoadedArtifact
+from atlasrag.contracts.types.ingestion import (
+    ClaimedIngestionItem,
+    IngestionRunState,
+    LoadedArtifact,
+)
+from atlasrag.modules.ingestion.chunking import (
+    DEFAULT_CHUNKING_CONFIG,
+    ChunkerResolver,
+    WhitespaceReferenceTokenizer,
+)
 from atlasrag.modules.ingestion.extraction.pipeline import ExtractionPipeline
 from atlasrag.modules.ingestion.services.artifact_loader import (
     ArtifactIntegrityMismatch,
@@ -67,6 +76,7 @@ def make_claim() -> ClaimedIngestionItem:
         attempt_number=1,
         claimed_at=_NOW,
         lease_expires_at=_NOW + timedelta(minutes=2),
+        ingestion_run_id=uuid4(),
     )
 
 
@@ -102,11 +112,21 @@ class FakeLifecycle:
         self._completed = completed
         self.completions: list[dict[str, object]] = []
 
-    async def mark_completed(
+    async def find_run(self, *, run_id: UUID) -> IngestionRunState:
+        return IngestionRunState(
+            id=run_id,
+            configuration={"chunking": DEFAULT_CHUNKING_CONFIG.as_mapping()},
+            configuration_hash="a" * 64,
+            created_by_principal_id=None,
+            created_at=_NOW,
+        )
+
+    async def replace_chunks_and_mark_completed(
         self,
         *,
         item_id: UUID,
         attempt_number: int,
+        chunks: tuple[object, ...],
         observed_file_hash: str,
         execution_metadata: dict[str, object],
     ) -> bool:
@@ -114,6 +134,7 @@ class FakeLifecycle:
             {
                 "item_id": item_id,
                 "attempt_number": attempt_number,
+                "chunks": chunks,
                 "observed_file_hash": observed_file_hash,
                 "execution_metadata": execution_metadata,
             }
@@ -133,6 +154,13 @@ def make_processor(
         ),
         lifecycle=cast(
             IngestionLifecycleService, lifecycle if lifecycle is not None else FakeLifecycle()
+        ),
+        chunker_resolver=ChunkerResolver(
+            tokenizers={
+                (WhitespaceReferenceTokenizer.name, WhitespaceReferenceTokenizer.version): (
+                    WhitespaceReferenceTokenizer()
+                )
+            }
         ),
     )
 

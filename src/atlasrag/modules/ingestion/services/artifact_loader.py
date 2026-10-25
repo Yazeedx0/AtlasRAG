@@ -87,6 +87,7 @@ class ArtifactLoader:
             expected_file_hash=artifact.file_hash,
             observed_file_hash=observed_file_hash,
             file_size_bytes=artifact.file_size_bytes,
+            language_code=artifact.language_code,
         )
 
 

@@ -39,6 +39,15 @@ class EmbeddingModelRepository(Protocol):
     ) -> None:
         ...
 
+    async def ensure_vector_index(
+        self,
+        *,
+        model_id: UUID,
+        dimension: int,
+        distance_metric: VectorDistanceMetric,
+    ) -> None:
+        ...
+
     async def find_model(self, *, model_id: UUID) -> EmbeddingModelState | None:
         ...
 

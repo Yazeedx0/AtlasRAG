@@ -3,6 +3,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     CheckConstraint,
+    Computed,
     DateTime,
     ForeignKey,
     Index,
@@ -13,10 +14,16 @@ from sqlalchemy import (
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from atlasrag.platform.database.base import Base
+
+SEARCH_VECTOR_EXPRESSION = (
+    "to_tsvector("
+    "CASE WHEN lower(coalesce(language_code, '')) LIKE 'ar%' "
+    "THEN 'arabic'::regconfig ELSE 'english'::regconfig END, content)"
+)
 
 
 class Chunk(Base):
@@ -45,6 +52,7 @@ class Chunk(Base):
         UniqueConstraint("ingestion_item_id", "chunk_index", name="uq_chunks_item_index"),
         Index("ix_chunks_ingestion_item_id", "ingestion_item_id"),
         Index("ix_chunks_content_hash", "content_hash"),
+        Index("ix_chunks_search_vector", "search_vector", postgresql_using="gin"),
         {"schema": "knowledge"},
     )
 
@@ -76,9 +84,14 @@ class Chunk(Base):
         default=dict,
         server_default=text("'{}'::jsonb"),
     )
+    search_vector: Mapped[str] = mapped_column(
+        TSVECTOR,
+        Computed(SEARCH_VECTOR_EXPRESSION, persisted=True),
+        nullable=False,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
 
-__all__ = ["Chunk"]
+__all__ = ["SEARCH_VECTOR_EXPRESSION", "Chunk"]

@@ -31,6 +31,11 @@ class EmbeddingModelRegistryService:
                 identity=identity,
                 configuration_hash=configuration_hash,
             )
+            await uow.models.ensure_vector_index(
+                model_id=model_id,
+                dimension=identity.dimension,
+                distance_metric=identity.distance_metric,
+            )
             await uow.commit()
             return model_id
 

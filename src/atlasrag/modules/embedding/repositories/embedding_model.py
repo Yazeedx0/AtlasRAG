@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import insert, select
+from sqlalchemy import insert, select, text
 from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,6 +10,7 @@ from atlasrag.contracts.types.embedding import (
     EmbeddingModelState,
     VectorDistanceMetric,
 )
+from atlasrag.modules.embedding._vector_index import create_vector_index_sql
 from atlasrag.modules.embedding.models import EmbeddingModel
 
 
@@ -67,6 +68,22 @@ class EmbeddingModelRepository:
                 configuration_hash=configuration_hash,
             )
         )
+        return None
+
+    async def ensure_vector_index(
+        self,
+        *,
+        model_id: uuid.UUID,
+        dimension: int,
+        distance_metric: VectorDistanceMetric,
+    ) -> None:
+        statement = create_vector_index_sql(
+            model_id=model_id,
+            dimension=dimension,
+            distance_metric=distance_metric,
+        )
+        if statement is not None:
+            await self._session.execute(text(statement))
         return None
 
     async def find_model(self, *, model_id: uuid.UUID) -> EmbeddingModelState | None:

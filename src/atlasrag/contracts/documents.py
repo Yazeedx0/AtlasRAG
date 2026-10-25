@@ -25,6 +25,9 @@ from atlasrag.contracts.types.document import (
 
 
 class DocumentRepository(Protocol):
+    async def list_active(self, *, limit: int, offset: int) -> tuple[DocumentState, ...]:
+        ...
+
     async def canonical_key_exists(self, *, canonical_key: str) -> bool:
         ...
 

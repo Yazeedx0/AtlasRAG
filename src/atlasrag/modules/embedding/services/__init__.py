@@ -1,5 +1,6 @@
 from .embedding_lifecycle import EmbeddingLifecycleService
 from .model_registry import EmbeddingModelRegistryService
+from .query_embedding import QueryEmbeddingService
 from .recovery import EmbeddingRecoveryReport, EmbeddingRecoveryService
 
 __all__ = [
@@ -7,4 +8,5 @@ __all__ = [
     "EmbeddingModelRegistryService",
     "EmbeddingRecoveryReport",
     "EmbeddingRecoveryService",
+    "QueryEmbeddingService",
 ]

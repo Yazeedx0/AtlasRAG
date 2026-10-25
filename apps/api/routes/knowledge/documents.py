@@ -61,6 +61,27 @@ def _to_acl_grant_response(grant: DocumentAclGrantState) -> DocumentAclGrantResp
     )
 
 
+@router.get(
+    "",
+    response_model=list[DocumentResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def list_documents(
+    _: Annotated[
+        UUID,
+        Depends(require_permission(Permission.KNOWLEDGE_DOCUMENTS_MANAGE)),
+    ],
+    service: Annotated[
+        DocumentManagementService,
+        Depends(get_document_management_service),
+    ],
+    limit: Annotated[int, Query(ge=1, le=100)] = 25,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> list[DocumentResponse]:
+    documents = await service.list_documents(limit=limit, offset=offset)
+    return [_to_document_response(document) for document in documents]
+
+
 @router.post(
     "",
     response_model=DocumentResponse,

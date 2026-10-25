@@ -12,6 +12,7 @@ from atlasrag.contracts.types.embedding import (
     EmbeddingModelIdentity,
     EmbeddingModelState,
     EmbeddingRunState,
+    QueryVector,
     VectorDistanceMetric,
 )
 
@@ -19,6 +20,12 @@ from atlasrag.contracts.types.embedding import (
 @runtime_checkable
 class EmbeddingProvider(Protocol):
     async def embed(self, *, request: EmbeddingBatchRequest) -> EmbeddingBatchResult:
+        ...
+
+
+@runtime_checkable
+class QueryEmbedder(Protocol):
+    async def embed_query(self, *, query: str) -> QueryVector:
         ...
 
 
@@ -221,4 +228,5 @@ __all__ = [
     "EmbeddingRunDispatcher",
     "EmbeddingRunRepository",
     "EmbeddingUnitOfWork",
+    "QueryEmbedder",
 ]

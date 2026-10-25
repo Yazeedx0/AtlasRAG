@@ -18,7 +18,7 @@ depends_on: str | Sequence[str] | None = None
 
 _SEARCH_VECTOR_EXPRESSION = (
     "to_tsvector("
-    "CASE WHEN lower(coalesce(language_code, '')) LIKE 'ar%' "
+    "CASE WHEN lower(coalesce(language_code, '')) ~ '^ar([-_]|$)' "
     "THEN 'arabic'::regconfig ELSE 'english'::regconfig END, content)"
 )
 

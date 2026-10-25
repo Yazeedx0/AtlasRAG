@@ -21,7 +21,7 @@ from atlasrag.platform.database.base import Base
 
 SEARCH_VECTOR_EXPRESSION = (
     "to_tsvector("
-    "CASE WHEN lower(coalesce(language_code, '')) LIKE 'ar%' "
+    "CASE WHEN lower(coalesce(language_code, '')) ~ '^ar([-_]|$)' "
     "THEN 'arabic'::regconfig ELSE 'english'::regconfig END, content)"
 )
 
@@ -88,6 +88,7 @@ class Chunk(Base):
         TSVECTOR,
         Computed(SEARCH_VECTOR_EXPRESSION, persisted=True),
         nullable=False,
+        deferred=True,
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

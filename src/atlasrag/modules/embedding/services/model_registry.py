@@ -39,6 +39,20 @@ class EmbeddingModelRegistryService:
             await uow.commit()
             return model_id
 
+    async def find_by_identity(
+        self, *, identity: EmbeddingModelIdentity
+    ) -> EmbeddingModelState | None:
+        async with self._uow_factory() as uow:
+            return await uow.models.find_model_by_identity(
+                provider=identity.provider.value,
+                model_name=identity.model_name,
+                model_revision=identity.model_revision,
+                dimension=identity.dimension,
+                distance_metric=identity.distance_metric,
+                max_input_tokens=identity.max_input_tokens,
+                configuration_hash=canonical_configuration_hash(dict(identity.configuration)),
+            )
+
     async def find_model(self, *, model_id: uuid.UUID) -> EmbeddingModelState | None:
         async with self._uow_factory() as uow:
             return await uow.models.find_model(model_id=model_id)

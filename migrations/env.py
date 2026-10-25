@@ -9,6 +9,7 @@ from sqlalchemy import Connection, pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from atlasrag import get_settings
+from atlasrag.modules.embedding import VECTOR_INDEX_NAME_PREFIX
 from atlasrag.modules.embedding import models as _embedding_models  # noqa: F401
 from atlasrag.modules.identity import models as _identity_models  # noqa: F401
 from atlasrag.modules.ingestion import models as _ingestion_models  # noqa: F401
@@ -24,7 +25,7 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
-REVISION_RE = re.compile(r"^(\d{4})\.py$")
+REVISION_RE = re.compile(r"^(\d{4})(?:_\w+)?\.py$")
 
 
 def _next_revision_id() -> str:
@@ -45,6 +46,12 @@ def process_revision_directives(context, revision, directives: list[MigrationScr
     script.rev_id = next_id
     if script.version_path is not None:
         script.version_path = str(Path(script.version_path).with_name(f"{next_id}.py"))
+
+
+def include_object(object_, name, type_, reflected, compare_to) -> bool:
+    # Per-model HNSW indexes are created at runtime by the embedding model registry.
+    is_vector_index = type_ == "index" and (name or "").startswith(VECTOR_INDEX_NAME_PREFIX)
+    return not (is_vector_index and reflected)
 
 
 def get_database_url() -> str:
@@ -69,6 +76,7 @@ def do_run_migrations(connection: Connection) -> None:
         connection=connection,
         target_metadata=target_metadata,
         include_schemas=True,
+        include_object=include_object,
         process_revision_directives=process_revision_directives,
     )
 

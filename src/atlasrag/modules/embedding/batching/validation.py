@@ -71,20 +71,32 @@ def _validated_values(*, values: tuple[float, ...], dimension: int) -> tuple[flo
     return values
 
 
+def exceeds_model_input_limit(
+    *,
+    text: str,
+    model: EmbeddingModelState,
+    max_chars_per_token: int,
+) -> bool:
+    # A token count from any local tokenizer cannot decide whether the provider will
+    # accept the text. The deterministic guard is a character bound that no tokenizer
+    # can undercut; the provider stays authoritative and its rejection is surfaced as
+    # ``EmbeddingInputTooLarge`` instead of truncating.
+    if model.max_input_tokens is None:
+        return False
+    return math.ceil(len(text) / max_chars_per_token) > model.max_input_tokens
+
+
 def _guard_input_size(
     *,
     chunk: EmbeddableChunk,
     model: EmbeddingModelState,
     config: EmbeddingRunConfig,
 ) -> None:
-    # ``token_count`` belongs to the chunking reference tokenizer, so it cannot decide
-    # whether the provider will accept the text. The deterministic guard is a character
-    # bound that no tokenizer can undercut; the provider stays authoritative and its
-    # rejection is surfaced as ``EmbeddingInputTooLarge`` instead of truncating.
-    if model.max_input_tokens is None:
-        return None
-    minimum_tokens = math.ceil(len(chunk.content) / config.max_chars_per_token)
-    if minimum_tokens > model.max_input_tokens:
+    if exceeds_model_input_limit(
+        text=chunk.content,
+        model=model,
+        max_chars_per_token=config.max_chars_per_token,
+    ):
         raise EmbeddingInputTooLarge(
             chunk_index=chunk.chunk_index,
             reason=INPUT_EXCEEDS_MODEL_LIMIT,
@@ -101,5 +113,6 @@ __all__ = [
     "UNKNOWN_VECTOR_INDEX",
     "VECTOR_COUNT_MISMATCH",
     "build_inputs",
+    "exceeds_model_input_limit",
     "ordered_vectors",
 ]

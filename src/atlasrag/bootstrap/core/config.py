@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     DATABASE_URL: PostgresDsn
     DATABASE_ECHO: bool = False
     DEBUG: bool = False
+    FRONTEND_ORIGINS: tuple[str, ...] = ("http://localhost:3000",)
 
     DISABLE_AUTH: bool = False
 

@@ -24,6 +24,10 @@ class DocumentManagementService:
         self._uow_factory = uow_factory
         self._clock = clock or (lambda: datetime.now(UTC))
 
+    async def list_documents(self, *, limit: int, offset: int) -> tuple[DocumentState, ...]:
+        async with self._uow_factory() as uow:
+            return await uow.documents.list_active(limit=limit, offset=offset)
+
     async def create_document(
         self,
         *,

@@ -315,7 +315,7 @@ AtlasRAG verifies Keycloak access tokens and resolves `(issuer, subject)` to a l
 docker compose -f infra/docker-compose.yml up -d postgres keycloak
 ```
 
-The `atlasrag` realm, the `atlasrag-api` resource-server client, and the confidential
+The `atlasrag` realm, the `atlasrag-api` resource-server client, and the public PKCE
 `atlasrag-web` client are imported automatically. See
 [`infra/keycloak/README.md`](infra/keycloak/README.md) for admin console access and how to
 protect a FastAPI route with `get_authenticated_identity`.
@@ -352,6 +352,23 @@ table inventories and referential-action decisions.
 | `make arch` | Enforce module boundaries via import-linter |
 | `make test` | Run the pytest suite |
 | `make check` | lint + typecheck + arch + test |
+
+### Frontend
+
+The Next.js frontend lives in [`frontend/`](frontend/) and uses the public
+`atlasrag-web` Keycloak client with Authorization Code + PKCE:
+
+```bash
+cd frontend
+cp .env.example .env.local
+npm install
+npm run dev
+```
+
+Open `http://localhost:3000`. If Keycloak was already initialized before the web client
+was changed to a public PKCE client, update or re-import that client configuration. See
+[`frontend/README.md`](frontend/README.md) for the supported API slices and known backend
+gaps.
 
 ## Testing strategy
 

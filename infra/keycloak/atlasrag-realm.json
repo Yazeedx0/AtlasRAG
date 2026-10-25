@@ -61,23 +61,19 @@
 
     {
       "clientId": "atlasrag-web",
-      "name": "AtlasRAG Web BFF",
+      "name": "AtlasRAG Web",
       "enabled": true,
       "protocol": "openid-connect",
 
-      "publicClient": false,
+      "publicClient": true,
       "bearerOnly": false,
-      "clientAuthenticatorType": "client-secret",
-      "secret": "${ATLAS_KEYCLOAK_WEB_CLIENT_SECRET}",
 
       "rootUrl": "http://localhost:3000",
       "baseUrl": "/",
 
-      "redirectUris": [
-        "http://localhost:3000/auth/callback"
-      ],
+      "redirectUris": ["http://localhost:3000/*"],
 
-      "webOrigins": [],
+      "webOrigins": ["http://localhost:3000"],
 
       "standardFlowEnabled": true,
       "implicitFlowEnabled": false,

@@ -24,6 +24,17 @@ class DocumentRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
+    async def list_active(self, *, limit: int, offset: int) -> tuple[DocumentState, ...]:
+        statement = (
+            select(*_document_columns())
+            .where(Document.deleted_at.is_(None))
+            .order_by(Document.updated_at.desc(), Document.id)
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await self._session.execute(statement)
+        return tuple(_to_document_state(row) for row in result.all())
+
     async def canonical_key_exists(self, *, canonical_key: str) -> bool:
         statement = select(
             exists().where(Document.canonical_key == canonical_key),

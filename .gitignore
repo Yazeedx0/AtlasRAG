@@ -128,6 +128,10 @@ ENV/
 env.bak/
 venv.bak/
 
+# Frontend
+frontend/node_modules/
+frontend/.next/
+
 # Spyder project settings
 .spyderproject
 .spyproject

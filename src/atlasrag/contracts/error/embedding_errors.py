@@ -41,6 +41,16 @@ class EmbeddingVectorInvalid(EmbeddingError):
         super().__init__(f"embedding provider returned an invalid vector: {reason}")
 
 
+class EmbeddingModelNotRegistered(EmbeddingError):
+    def __init__(self, *, provider: str, model_name: str, model_revision: str) -> None:
+        self.provider = provider
+        self.model_name = model_name
+        self.model_revision = model_revision
+        super().__init__(
+            f"embedding model is not registered: {provider}/{model_name}@{model_revision}"
+        )
+
+
 class IngestionItemNotEmbeddable(EmbeddingError):
     def __init__(self, *, reason: str) -> None:
         self.reason = reason
@@ -67,6 +77,7 @@ __all__ = [
     "EmbeddingError",
     "EmbeddingInputInvalid",
     "EmbeddingInputTooLarge",
+    "EmbeddingModelNotRegistered",
     "EmbeddingProviderPermanentError",
     "EmbeddingProviderTransientError",
     "EmbeddingRunAlreadyInFlight",

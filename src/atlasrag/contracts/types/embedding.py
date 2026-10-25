@@ -135,6 +135,14 @@ class EmbeddingBatchResult:
 
 
 @dataclass(frozen=True, slots=True)
+class QueryVector:
+    embedding_model_id: uuid.UUID
+    dimension: int
+    distance_metric: VectorDistanceMetric
+    values: tuple[float, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class ChunkVector:
     chunk_id: uuid.UUID
     values: tuple[float, ...]
@@ -161,5 +169,6 @@ __all__ = [
     "EmbeddingStatus",
     "EmbeddingUsage",
     "EmbeddingVector",
+    "QueryVector",
     "VectorDistanceMetric",
 ]

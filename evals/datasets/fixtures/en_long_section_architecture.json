@@ -1,0 +1,49 @@
+{
+  "schema_version": "1",
+  "fixture_id": "en_long_section_architecture",
+  "title": "Platform Architecture — Ingestion Runtime",
+  "language": "en",
+  "source_type": "long_section",
+  "document_metadata": {
+    "source_file": "architecture_ingestion_runtime.md",
+    "language_code": "en"
+  },
+  "expected_structure": {
+    "heading_count": 1,
+    "table_count": 0,
+    "requires_splitting": true,
+    "pages_covered": [7, 8]
+  },
+  "annotated_boundaries": [
+    {
+      "after_block_index": 2,
+      "rationale": "The lease and heartbeat discussion is self contained; a split here keeps the failure semantics with the mechanism that produces them."
+    }
+  ],
+  "blocks": [
+    {
+      "text": "Ingestion Runtime",
+      "block_type": "heading",
+      "page_number": 7,
+      "metadata": { "level": 1 }
+    },
+    {
+      "text": "The ingestion runtime is organised around a single durable queue of ingestion items, each of which represents exactly one document artifact that must be carried from raw bytes to indexed chunks. A worker never selects work by scanning for the oldest pending row, because that pattern causes every worker in the fleet to contend on the same page of the same index and produces a thundering herd whenever the queue drains and refills. Instead a worker claims a bounded batch under a row level lock that skips locked rows, writes a lease expiry into the claimed row, and only then begins processing. The lease is the single source of truth about ownership: a worker that loses its network connection, is evicted by the scheduler, or is killed by the operating system out of memory reaper does not need to clean up after itself, because the lease it holds simply expires and a reaper process returns the item to the pending state with its attempt counter incremented. This design deliberately trades a small amount of duplicated work for a large reduction in operational complexity, since the alternative, distributed coordination through a consensus service, introduces a second failure domain that must itself be operated and understood.",
+      "block_type": "paragraph",
+      "page_number": 7,
+      "metadata": {}
+    },
+    {
+      "text": "Heartbeats extend the lease rather than renew it, which matters for long running extraction of large scanned documents. A worker that is making progress writes a heartbeat on a fixed interval that is a small fraction of the lease duration, so a single missed heartbeat is not sufficient to lose the claim. When the extraction step calls out to an external vision model the heartbeat continues on a background task, because the alternative, blocking the heartbeat behind a slow provider call, would cause healthy workers to lose leases exactly when the system is under load and the provider is slow. Attempt counters are bounded, and an item that exhausts its attempts moves to a terminal failed state with a structured error code rather than an error string, so that the failure can be aggregated across a fleet without parsing free text.",
+      "block_type": "paragraph",
+      "page_number": 8,
+      "metadata": {}
+    },
+    {
+      "text": "Outbox publication closes the loop between the transactional database and the asynchronous queue. The state transition that marks an item ready and the row that will become a queue message are written in the same transaction, so there is no window in which the database says the work is ready but no message exists. A separate publisher process reads unpublished outbox rows in order, hands them to the broker, and marks them published. Because the broker guarantees at least once delivery and the publisher may crash between the broker acknowledgement and the database update, every consumer must be idempotent with respect to the item identifier, and the ingestion item state machine enforces this by rejecting transitions that are not legal from the current state.",
+      "block_type": "paragraph",
+      "page_number": null,
+      "metadata": { "provenance_missing": true }
+    }
+  ]
+}
